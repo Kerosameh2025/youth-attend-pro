@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, FileText } from "lucide-react";
 import { supabase, type Student, type FridaySession, type Attendance } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
@@ -9,6 +9,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { StudentAvatar } from "@/components/StudentAvatar";
+import { exportToExcel, exportToPDF } from "@/lib/export";
 
 export const Route = createFileRoute("/attendance/$sessionId")({
   component: () => (
@@ -88,10 +89,42 @@ function SessionCheckIn() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <Stat label={t("total_students")} value={students.length} />
-        <Stat label={t("present_count")} value={presentCount} className="text-green-600" />
-        <Stat label={t("absent_count")} value={absentCount} className="text-red-600" />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="grid grid-cols-3 gap-2 flex-1 min-w-[260px]">
+          <Stat label={t("total_students")} value={students.length} />
+          <Stat label={t("present_count")} value={presentCount} className="text-green-600" />
+          <Stat label={t("absent_count")} value={absentCount} className="text-red-600" />
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => {
+            const rows = students.map((s) => ({
+              code: s.code, name: s.name,
+              status: att[s.id] ? t("present") : t("absent"),
+            }));
+            exportToExcel(rows, `attendance-${session?.session_date ?? "session"}.xlsx`, "Attendance");
+            toast.success(t("saved"));
+          }} disabled={!students.length}>
+            <FileSpreadsheet className="size-4" /> {t("export_excel")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            exportToPDF({
+              title: t("take_attendance"),
+              subtitle: session ? new Date(session.session_date).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) : "",
+              lang, dir: lang === "ar" ? "rtl" : "ltr",
+              columns: [
+                { key: "code", label: t("code") },
+                { key: "name", label: t("name") },
+                { key: "status", label: lang === "ar" ? "الحالة" : "Status" },
+              ],
+              rows: students.map((s) => ({
+                code: s.code, name: s.name,
+                status: att[s.id] ? t("present") : t("absent"),
+              })),
+            });
+          }} disabled={!students.length}>
+            <FileText className="size-4" /> {t("export_pdf")}
+          </Button>
+        </div>
       </div>
 
       {loading ? (

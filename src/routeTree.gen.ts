@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as StudentsIndexRouteImport } from './routes/students.index'
 import { Route as AttendanceIndexRouteImport } from './routes/attendance.index'
 import { Route as StudentsNewRouteImport } from './routes/students.new'
+import { Route as StudentsImportRouteImport } from './routes/students.import'
 import { Route as StudentsIdRouteImport } from './routes/students.$id'
 import { Route as AttendanceSessionIdRouteImport } from './routes/attendance.$sessionId'
 
@@ -54,6 +55,11 @@ const StudentsNewRoute = StudentsNewRouteImport.update({
   path: '/students/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentsImportRoute = StudentsImportRouteImport.update({
+  id: '/students/import',
+  path: '/students/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudentsIdRoute = StudentsIdRouteImport.update({
   id: '/students/$id',
   path: '/students/$id',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
+  '/students/import': typeof StudentsImportRoute
   '/students/new': typeof StudentsNewRoute
   '/attendance/': typeof AttendanceIndexRoute
   '/students/': typeof StudentsIndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
+  '/students/import': typeof StudentsImportRoute
   '/students/new': typeof StudentsNewRoute
   '/attendance': typeof AttendanceIndexRoute
   '/students': typeof StudentsIndexRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
+  '/students/import': typeof StudentsImportRoute
   '/students/new': typeof StudentsNewRoute
   '/attendance/': typeof AttendanceIndexRoute
   '/students/': typeof StudentsIndexRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/attendance/$sessionId'
     | '/students/$id'
+    | '/students/import'
     | '/students/new'
     | '/attendance/'
     | '/students/'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/attendance/$sessionId'
     | '/students/$id'
+    | '/students/import'
     | '/students/new'
     | '/attendance'
     | '/students'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/attendance/$sessionId'
     | '/students/$id'
+    | '/students/import'
     | '/students/new'
     | '/attendance/'
     | '/students/'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   AttendanceSessionIdRoute: typeof AttendanceSessionIdRoute
   StudentsIdRoute: typeof StudentsIdRoute
+  StudentsImportRoute: typeof StudentsImportRoute
   StudentsNewRoute: typeof StudentsNewRoute
   AttendanceIndexRoute: typeof AttendanceIndexRoute
   StudentsIndexRoute: typeof StudentsIndexRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/students/import': {
+      id: '/students/import'
+      path: '/students/import'
+      fullPath: '/students/import'
+      preLoaderRoute: typeof StudentsImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/students/$id': {
       id: '/students/$id'
       path: '/students/$id'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   AttendanceSessionIdRoute: AttendanceSessionIdRoute,
   StudentsIdRoute: StudentsIdRoute,
+  StudentsImportRoute: StudentsImportRoute,
   StudentsNewRoute: StudentsNewRoute,
   AttendanceIndexRoute: AttendanceIndexRoute,
   StudentsIndexRoute: StudentsIndexRoute,

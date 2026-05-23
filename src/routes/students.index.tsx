@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Upload, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase, type Student } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -9,6 +9,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StudentAvatar } from "@/components/StudentAvatar";
+import { exportToExcel, exportToPDF } from "@/lib/export";
 
 export const Route = createFileRoute("/students/")({
   component: () => (
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/students/")({
 });
 
 function StudentsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { profile } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,15 +56,64 @@ function StudentsPage() {
     !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.code.toLowerCase().includes(q.toLowerCase())
   );
 
+  
+
+  const buildExportRows = () =>
+    filtered.map((s) => ({
+      code: s.code,
+      name: s.name,
+      age: s.age ?? "",
+      phones: canViewPhones ? (s.phones ?? []).join(" / ") : "***",
+      school: s.school ?? "",
+      address: s.address ?? "",
+      father_job: s.father_job ?? "",
+      notes: s.notes ?? "",
+    }));
+
+  const onExportExcel = () => {
+    exportToExcel(buildExportRows(), `students-${new Date().toISOString().slice(0,10)}.xlsx`, "Students");
+    toast.success(t("saved"));
+  };
+
+  const onExportPDF = () => {
+    exportToPDF({
+      title: t("students"),
+      subtitle: lang === "ar" ? "قائمة الطلاب" : "Students list",
+      lang, dir: lang === "ar" ? "rtl" : "ltr",
+      columns: [
+        { key: "code", label: t("code") },
+        { key: "name", label: t("name") },
+        { key: "age", label: t("age") },
+        { key: "phones", label: t("phones") },
+        { key: "school", label: t("school") },
+        { key: "address", label: t("address") },
+      ],
+      rows: buildExportRows(),
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold">{t("students")}</h1>
-        {canAdd && (
-          <Button asChild>
-            <Link to="/students/new"><Plus className="size-4" /> {t("add_student")}</Link>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={onExportExcel} disabled={!filtered.length}>
+            <FileSpreadsheet className="size-4" /> {t("export_excel")}
           </Button>
-        )}
+          <Button variant="outline" size="sm" onClick={onExportPDF} disabled={!filtered.length}>
+            <FileText className="size-4" /> {t("export_pdf")}
+          </Button>
+          {canAdd && (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/students/import"><Upload className="size-4" /> {t("import")}</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link to="/students/new"><Plus className="size-4" /> {t("add_student")}</Link>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="relative max-w-sm">
