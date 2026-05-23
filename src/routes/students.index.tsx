@@ -20,7 +20,7 @@ export const Route = createFileRoute("/students/")({
 });
 
 function StudentsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { profile } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
