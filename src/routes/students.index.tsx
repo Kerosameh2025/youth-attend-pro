@@ -56,7 +56,7 @@ function StudentsPage() {
     !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.code.toLowerCase().includes(q.toLowerCase())
   );
 
-  const { lang } = useI18n();
+  
 
   const buildExportRows = () =>
     filtered.map((s) => ({
