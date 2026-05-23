@@ -6,7 +6,6 @@ import { supabase, type Student } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import { RequireAuth } from "@/components/RequireAuth";
-import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StudentAvatar } from "@/components/StudentAvatar";
