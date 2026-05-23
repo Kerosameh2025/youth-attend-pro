@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, FileText } from "lucide-react";
 import { supabase, type Student, type FridaySession, type Attendance } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
@@ -9,6 +9,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { StudentAvatar } from "@/components/StudentAvatar";
+import { exportToExcel, exportToPDF } from "@/lib/export";
 
 export const Route = createFileRoute("/attendance/$sessionId")({
   component: () => (
