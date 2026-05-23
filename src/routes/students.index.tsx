@@ -15,9 +15,7 @@ import { exportToExcel, exportToPDF } from "@/lib/export";
 export const Route = createFileRoute("/students/")({
   component: () => (
     <RequireAuth>
-      <AppShell>
-        <StudentsPage />
-      </AppShell>
+      <StudentsPage />
     </RequireAuth>
   ),
 });
