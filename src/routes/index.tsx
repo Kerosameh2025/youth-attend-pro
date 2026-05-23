@@ -28,33 +28,31 @@ function Index() {
   const isAdmin = profile?.role === "super_admin";
   const Arrow = lang === "ar" ? ArrowLeft : ArrowRight;
 
-  const cards = [
+  const cards: Array<{
+    title: string; desc: string; href: string; icon: typeof Users;
+    bar: string; iconBg: string; iconColor: string;
+  }> = [
     {
       title: t("students"),
       desc: lang === "ar" ? "إدارة بيانات الطلاب والصور وأرقام التواصل" : "Manage student records, photos and contact info",
-      href: "/students",
-      icon: Users,
-      tint: "from-[oklch(0.55_0.18_265)] to-[oklch(0.32_0.1_260)]",
-      iconBg: "bg-[oklch(0.55_0.18_265)/0.15] text-[oklch(0.55_0.18_265)] dark:text-[oklch(0.78_0.15_260)]",
+      href: "/students", icon: Users,
+      bar: "linear-gradient(90deg, oklch(0.55 0.18 265), oklch(0.32 0.1 260))",
+      iconBg: "oklch(0.55 0.18 265 / 0.12)", iconColor: "oklch(0.45 0.18 265)",
     },
     {
       title: t("attendance"),
       desc: lang === "ar" ? "تسجيل حضور الجمعة وتوليد الجلسات تلقائياً" : "Take Friday attendance and auto-generate sessions",
-      href: "/attendance",
-      icon: CalendarCheck2,
-      tint: "from-[oklch(0.78_0.13_80)] to-[oklch(0.62_0.15_60)]",
-      iconBg: "bg-[oklch(0.78_0.13_80)/0.2] text-[oklch(0.55_0.15_70)] dark:text-[oklch(0.85_0.13_82)]",
+      href: "/attendance", icon: CalendarCheck2,
+      bar: "linear-gradient(90deg, oklch(0.78 0.13 80), oklch(0.62 0.15 60))",
+      iconBg: "oklch(0.78 0.13 80 / 0.18)", iconColor: "oklch(0.55 0.15 70)",
     },
-    ...(isAdmin
-      ? [{
-          title: t("servants"),
-          desc: lang === "ar" ? "إدارة الخدام وضبط صلاحيات كل خادم" : "Manage servants and configure permissions",
-          href: "/servants",
-          icon: ShieldCheck,
-          tint: "from-[oklch(0.55_0.15_200)] to-[oklch(0.38_0.12_220)]",
-          iconBg: "bg-[oklch(0.55_0.15_200)/0.15] text-[oklch(0.5_0.15_210)] dark:text-[oklch(0.78_0.13_205)]",
-        }]
-      : []),
+    ...(isAdmin ? [{
+      title: t("servants"),
+      desc: lang === "ar" ? "إدارة الخدام وضبط صلاحيات كل خادم" : "Manage servants and configure permissions",
+      href: "/servants", icon: ShieldCheck,
+      bar: "linear-gradient(90deg, oklch(0.55 0.15 200), oklch(0.38 0.12 220))",
+      iconBg: "oklch(0.55 0.15 200 / 0.14)", iconColor: "oklch(0.45 0.15 210)",
+    }] : []),
   ];
 
   return (
