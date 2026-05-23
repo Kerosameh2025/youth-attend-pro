@@ -1,19 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Upload, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase, type Student } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import { RequireAuth } from "@/components/RequireAuth";
+import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StudentAvatar } from "@/components/StudentAvatar";
+import { exportToExcel, exportToPDF } from "@/lib/export";
 
 export const Route = createFileRoute("/students/")({
   component: () => (
     <RequireAuth>
-      <StudentsPage />
+      <AppShell>
+        <StudentsPage />
+      </AppShell>
     </RequireAuth>
   ),
 });
