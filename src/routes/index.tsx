@@ -88,8 +88,11 @@ function Index() {
               className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-5 shadow-soft hover:shadow-elegant hover:-translate-y-1 transition-all duration-300"
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${c.tint}`} />
-              <div className={`size-12 rounded-xl flex items-center justify-center ${c.iconBg} group-hover:scale-110 transition-transform`}>
+              <div className="absolute inset-x-0 top-0 h-1" style={{ background: c.bar }} />
+              <div
+                className="size-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                style={{ background: c.iconBg, color: c.iconColor }}
+              >
                 <c.icon className="size-6" />
               </div>
               <h3 className="mt-4 font-bold text-lg">{c.title}</h3>
