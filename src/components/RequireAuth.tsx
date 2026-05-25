@@ -2,6 +2,7 @@ import { Navigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/lib/i18n";
 import { AppShell } from "@/components/AppShell";
+import { InactivityGuard } from "@/hooks/use-inactivity-logout";
 import type { ReactNode } from "react";
 
 export function RequireAuth({ children, adminOnly }: { children: ReactNode; adminOnly?: boolean }) {
@@ -23,5 +24,10 @@ export function RequireAuth({ children, adminOnly }: { children: ReactNode; admi
       </AppShell>
     );
   }
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      <InactivityGuard />
+      {children}
+    </AppShell>
+  );
 }

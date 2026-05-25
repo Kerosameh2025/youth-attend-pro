@@ -103,6 +103,19 @@ const dict: Dict = {
   username_invalid: { ar: "اسم المستخدم يجب أن يكون أحرف إنجليزية وأرقام فقط", en: "Username must be letters/numbers only" },
   username_not_found: { ar: "اسم المستخدم غير موجود", en: "Username not found" },
   no_permission_login: { ar: "هذا الحساب ليس حساب مسؤول عام", en: "This account is not a super admin" },
+  // Phase 3 — activity & inactivity
+  last_login: { ar: "آخر تسجيل دخول", en: "Last login" },
+  never_logged_in: { ar: "لم يسجل دخول بعد", en: "Never signed in" },
+  total_logins: { ar: "إجمالي الدخول", en: "Total logins" },
+  login_history: { ar: "سجل تسجيل الدخول", en: "Login History" },
+  no_login_history: { ar: "لا يوجد سجل دخول", en: "No login history" },
+  device_mobile: { ar: "جوال", en: "Mobile" },
+  device_desktop: { ar: "حاسوب", en: "Desktop" },
+  inactivity_signed_out: {
+    ar: "تم تسجيل خروجك تلقائياً بسبب عدم النشاط",
+    en: "You were signed out automatically due to inactivity",
+  },
+  close: { ar: "إغلاق", en: "Close" },
 };
 
 type Ctx = {

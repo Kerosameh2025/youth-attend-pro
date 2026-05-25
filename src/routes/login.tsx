@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase, usernameToEmail } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -12,8 +12,12 @@ import {
   CheckCircle2, XCircle, AlertCircle, ShieldCheck, ArrowLeft,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
+import { getDeviceInfo } from "@/lib/device-info";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    reason: typeof s.reason === "string" ? (s.reason as string) : undefined,
+  }),
   component: LoginPage,
 });
 
@@ -41,6 +45,7 @@ function LoginPage() {
   const { theme, toggle } = useTheme();
   const { session } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [mode, setMode] = useState<"servant" | "admin">("servant");
 
   const [username, setUsername] = useState("");
@@ -48,6 +53,19 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  // Show inactivity toast once when redirected here
+  const inactivityShown = useRef(false);
+  useEffect(() => {
+    if (search.reason === "inactivity" && !inactivityShown.current) {
+      inactivityShown.current = true;
+      toast.error(t("inactivity_signed_out"), {
+        icon: <AlertCircle className="size-5 text-amber-500" />,
+        className: "!border-amber-500/40 !bg-amber-500/5",
+      });
+      navigate({ to: "/login", search: {} as any, replace: true });
+    }
+  }, [search.reason, t, navigate]);
 
   if (session) navigate({ to: "/" });
 
@@ -100,6 +118,14 @@ function LoginPage() {
         });
         return;
       }
+    }
+
+    // Record login activity (RLS allows insert for own id)
+    if (data.user) {
+      void supabase.from("servant_logins").insert({
+        servant_id: data.user.id,
+        device_info: getDeviceInfo(),
+      });
     }
 
     setLoading(false);

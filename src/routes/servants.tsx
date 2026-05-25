@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   supabase, supabaseSecondary, usernameToEmail, type Profile,
@@ -11,10 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { UserPlus, ShieldCheck, User as UserIcon, CheckCircle2 } from "lucide-react";
+import {
+  UserPlus, ShieldCheck, User as UserIcon, CheckCircle2,
+  Clock, Smartphone, Monitor, History, LogIn,
+} from "lucide-react";
 
 export const Route = createFileRoute("/servants")({
   component: () => (
@@ -31,21 +35,54 @@ const PERMS = [
   "perm_take_attendance",
 ] as const;
 
+type LoginRow = {
+  id: string;
+  servant_id: string;
+  logged_in_at: string;
+  device_info: { type?: string; ua?: string; platform?: string; lang?: string } | null;
+};
+
 function ServantsPage() {
   const { t, lang } = useI18n();
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [logins, setLogins] = useState<LoginRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [historyOf, setHistoryOf] = useState<Profile | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("profiles").select("*").order("full_name");
-    if (error) toast.error(error.message);
-    setProfiles((data as Profile[]) ?? []);
+    const [{ data: profs, error: pErr }, { data: lg, error: lErr }] = await Promise.all([
+      supabase.from("profiles").select("*").order("full_name"),
+      supabase.from("servant_logins").select("*").order("logged_in_at", { ascending: false }),
+    ]);
+    if (pErr) toast.error(pErr.message);
+    if (lErr && lErr.code !== "PGRST116") {
+      // Table may not yet exist — silently ignore so page still renders
+      console.warn("servant_logins:", lErr.message);
+    }
+    setProfiles((profs as Profile[]) ?? []);
+    setLogins((lg as LoginRow[]) ?? []);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
+
+  const statsByUser = useMemo(() => {
+    const map = new Map<string, { count: number; last?: string }>();
+    for (const r of logins) {
+      const cur = map.get(r.servant_id) ?? { count: 0, last: undefined };
+      cur.count += 1;
+      if (!cur.last || r.logged_in_at > cur.last) cur.last = r.logged_in_at;
+      map.set(r.servant_id, cur);
+    }
+    return map;
+  }, [logins]);
+
+  const historyRows = useMemo(
+    () => (historyOf ? logins.filter((l) => l.servant_id === historyOf.id) : []),
+    [logins, historyOf],
+  );
 
   const updatePerm = async (id: string, key: string, value: boolean) => {
     setProfiles((prev) => prev.map((p) => (p.id === id ? { ...p, [key]: value } : p)));
@@ -58,6 +95,14 @@ function ServantsPage() {
     const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
     if (error) { toast.error(error.message); load(); }
     else toast.success(t("saved"));
+  };
+
+  const fmtDateTime = (iso?: string) => {
+    if (!iso) return t("never_logged_in");
+    const d = new Date(iso);
+    return d.toLocaleString(lang === "ar" ? "ar-EG" : "en-US", {
+      dateStyle: "medium", timeStyle: "short",
+    });
   };
 
   return (
@@ -84,47 +129,129 @@ function ServantsPage() {
         <div className="text-center py-12 text-muted-foreground">{t("no_servants")}</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {profiles.map((p) => (
-            <Card key={p.id} className="shadow-soft hover:shadow-elegant transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="size-9 rounded-lg bg-gradient-gold/30 flex items-center justify-center shrink-0">
-                      <UserIcon className="size-4 text-gold" />
+          {profiles.map((p) => {
+            const stats = statsByUser.get(p.id);
+            return (
+              <Card
+                key={p.id}
+                className="shadow-soft hover:shadow-elegant transition-all cursor-pointer hover:-translate-y-0.5"
+                onClick={() => setHistoryOf(p)}
+              >
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-9 rounded-lg bg-gradient-gold/30 flex items-center justify-center shrink-0">
+                        <UserIcon className="size-4 text-gold" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate text-base">{p.full_name || p.id.slice(0, 8)}</div>
+                        {p.username && (
+                          <div className="text-xs text-muted-foreground truncate font-mono">@{p.username}</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="truncate text-base">{p.full_name || p.id.slice(0, 8)}</div>
-                      {p.username && (
-                        <div className="text-xs text-muted-foreground truncate font-mono">@{p.username}</div>
-                      )}
-                    </div>
-                  </div>
-                  <select
-                    className="text-xs border rounded px-2 py-1 bg-background"
-                    value={p.role}
-                    onChange={(e) => updateRole(p.id, e.target.value as any)}
+                    <select
+                      className="text-xs border rounded px-2 py-1 bg-background"
+                      value={p.role}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => updateRole(p.id, e.target.value as any)}
+                    >
+                      <option value="servant">{t("servant")}</option>
+                      <option value="super_admin">{t("super_admin")}</option>
+                    </select>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3" onClick={(e) => e.stopPropagation()}>
+                  {/* Activity row */}
+                  <div
+                    className="flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2 cursor-pointer hover:bg-muted/60 transition-colors"
+                    onClick={() => setHistoryOf(p)}
                   >
-                    <option value="servant">{t("servant")}</option>
-                    <option value="super_admin">{t("super_admin")}</option>
-                  </select>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2.5">
-                {PERMS.map((k) => (
-                  <div key={k} className="flex items-center justify-between text-sm">
-                    <span>{t(k as any)}</span>
-                    <Switch
-                      checked={p.role === "super_admin" || (p as any)[k]}
-                      disabled={p.role === "super_admin"}
-                      onCheckedChange={(v) => updatePerm(p.id, k, v)}
-                    />
+                    <div className="flex items-center gap-2 text-xs min-w-0">
+                      <Clock className="size-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground">{t("last_login")}:</span>
+                      <span className="truncate font-medium">{fmtDateTime(stats?.last)}</span>
+                    </div>
+                    <Badge variant="secondary" className="gap-1 shrink-0">
+                      <LogIn className="size-3" />
+                      {stats?.count ?? 0}
+                    </Badge>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
+
+                  {PERMS.map((k) => (
+                    <div key={k} className="flex items-center justify-between text-sm">
+                      <span>{t(k as any)}</span>
+                      <Switch
+                        checked={p.role === "super_admin" || (p as any)[k]}
+                        disabled={p.role === "super_admin"}
+                        onCheckedChange={(v) => updatePerm(p.id, k, v)}
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
+
+      <Dialog open={!!historyOf} onOpenChange={(o) => { if (!o) setHistoryOf(null); }}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="size-5 text-gold" />
+              {t("login_history")}
+            </DialogTitle>
+            <DialogDescription className="flex items-center gap-2">
+              <span className="font-medium text-foreground">
+                {historyOf?.full_name || "—"}
+              </span>
+              {historyOf?.username && (
+                <span className="text-xs font-mono">@{historyOf.username}</span>
+              )}
+              <Badge variant="secondary" className="gap-1 ms-auto">
+                <LogIn className="size-3" />
+                {historyRows.length}
+              </Badge>
+            </DialogDescription>
+          </DialogHeader>
+
+          {historyRows.length === 0 ? (
+            <div className="text-center py-10 text-sm text-muted-foreground">
+              {t("no_login_history")}
+            </div>
+          ) : (
+            <ol className="relative ms-3 border-s border-border/60 space-y-4 py-2">
+              {historyRows.map((r) => {
+                const isMobile = (r.device_info?.type ?? "") === "mobile";
+                return (
+                  <li key={r.id} className="ms-4">
+                    <span className="absolute -start-1.5 size-3 rounded-full bg-gradient-gold shadow-gold ring-2 ring-background" />
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <time className="text-sm font-medium">{fmtDateTime(r.logged_in_at)}</time>
+                      <Badge variant="outline" className="gap-1">
+                        {isMobile
+                          ? <Smartphone className="size-3" />
+                          : <Monitor className="size-3" />}
+                        {isMobile ? t("device_mobile") : t("device_desktop")}
+                      </Badge>
+                    </div>
+                    {r.device_info?.ua && (
+                      <p className="text-[10px] text-muted-foreground mt-1 truncate font-mono">
+                        {r.device_info.ua}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoryOf(null)}>{t("close")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
