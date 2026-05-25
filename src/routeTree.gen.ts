@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ServantsRouteImport } from './routes/servants'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
@@ -20,11 +19,6 @@ import { Route as StudentsImportRouteImport } from './routes/students.import'
 import { Route as StudentsIdRouteImport } from './routes/students.$id'
 import { Route as AttendanceSessionIdRouteImport } from './routes/attendance.$sessionId'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ServantsRoute = ServantsRouteImport.update({
   id: '/servants',
   path: '/servants',
@@ -75,7 +69,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/servants': typeof ServantsRoute
-  '/signup': typeof SignupRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
   '/students/import': typeof StudentsImportRoute
@@ -87,7 +80,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/servants': typeof ServantsRoute
-  '/signup': typeof SignupRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
   '/students/import': typeof StudentsImportRoute
@@ -100,7 +92,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/servants': typeof ServantsRoute
-  '/signup': typeof SignupRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
   '/students/import': typeof StudentsImportRoute
@@ -114,7 +105,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/servants'
-    | '/signup'
     | '/attendance/$sessionId'
     | '/students/$id'
     | '/students/import'
@@ -126,7 +116,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/servants'
-    | '/signup'
     | '/attendance/$sessionId'
     | '/students/$id'
     | '/students/import'
@@ -138,7 +127,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/servants'
-    | '/signup'
     | '/attendance/$sessionId'
     | '/students/$id'
     | '/students/import'
@@ -151,7 +139,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   ServantsRoute: typeof ServantsRoute
-  SignupRoute: typeof SignupRoute
   AttendanceSessionIdRoute: typeof AttendanceSessionIdRoute
   StudentsIdRoute: typeof StudentsIdRoute
   StudentsImportRoute: typeof StudentsImportRoute
@@ -162,13 +149,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/servants': {
       id: '/servants'
       path: '/servants'
@@ -239,7 +219,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   ServantsRoute: ServantsRoute,
-  SignupRoute: SignupRoute,
   AttendanceSessionIdRoute: AttendanceSessionIdRoute,
   StudentsIdRoute: StudentsIdRoute,
   StudentsImportRoute: StudentsImportRoute,

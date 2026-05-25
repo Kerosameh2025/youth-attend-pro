@@ -92,6 +92,17 @@ const dict: Dict = {
   avg_attendance: { ar: "متوسط الحضور", en: "Avg Attendance" },
   no_data: { ar: "لا توجد بيانات", en: "No data" },
   absent_times: { ar: "مرات الغياب", en: "Absences" },
+  username: { ar: "اسم المستخدم", en: "Username" },
+  servant_login: { ar: "تسجيل دخول الخادم", en: "Servant Login" },
+  admin_login: { ar: "تسجيل دخول كمسؤول عام", en: "Sign in as Super Admin" },
+  back_to_servant: { ar: "العودة لتسجيل دخول الخادم", en: "Back to servant login" },
+  add_servant: { ar: "إضافة خادم", en: "Add Servant" },
+  create: { ar: "إنشاء", en: "Create" },
+  servant_created: { ar: "تم إنشاء حساب الخادم بنجاح", en: "Servant account created" },
+  username_taken: { ar: "اسم المستخدم مستخدم بالفعل", en: "Username already taken" },
+  username_invalid: { ar: "اسم المستخدم يجب أن يكون أحرف إنجليزية وأرقام فقط", en: "Username must be letters/numbers only" },
+  username_not_found: { ar: "اسم المستخدم غير موجود", en: "Username not found" },
+  no_permission_login: { ar: "هذا الحساب ليس حساب مسؤول عام", en: "This account is not a super admin" },
 };
 
 type Ctx = {

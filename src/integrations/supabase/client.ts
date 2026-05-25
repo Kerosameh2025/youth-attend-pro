@@ -13,9 +13,29 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+/**
+ * A second, isolated Supabase client used ONLY when the super admin needs to
+ * create a new servant account. Using a separate client prevents the
+ * resulting signUp() session from overriding the admin's current session in
+ * the main `supabase` client above.
+ */
+export const supabaseSecondary = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+});
+
+/** Domain used to synthesize an email from a servant's username for Supabase Auth. */
+export const SERVANT_EMAIL_DOMAIN = "servants.church.local";
+export const usernameToEmail = (username: string) =>
+  `${username.trim().toLowerCase()}@${SERVANT_EMAIL_DOMAIN}`;
+
 export type Profile = {
   id: string;
   full_name: string | null;
+  username: string | null;
   role: "super_admin" | "servant";
   perm_add_student: boolean;
   perm_edit_student: boolean;
