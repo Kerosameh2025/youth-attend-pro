@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   supabase, supabaseSecondary, usernameToEmail, type Profile,
@@ -11,10 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { UserPlus, ShieldCheck, User as UserIcon, CheckCircle2 } from "lucide-react";
+import {
+  UserPlus, ShieldCheck, User as UserIcon, CheckCircle2,
+  Clock, Smartphone, Monitor, History, LogIn,
+} from "lucide-react";
 
 export const Route = createFileRoute("/servants")({
   component: () => (
