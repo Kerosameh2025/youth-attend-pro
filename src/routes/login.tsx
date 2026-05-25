@@ -1,22 +1,30 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, usernameToEmail } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Languages, Moon, Sun, Church, Mail, Lock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import {
+  Languages, Moon, Sun, Church, Mail, Lock, User as UserIcon,
+  CheckCircle2, XCircle, AlertCircle, ShieldCheck, ArrowLeft,
+} from "lucide-react";
 import { useTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-function friendlyAuthError(msg: string, lang: "ar" | "en") {
+function friendlyAuthError(msg: string, lang: "ar" | "en", mode: "servant" | "admin") {
   const m = msg.toLowerCase();
   if (m.includes("invalid login") || m.includes("invalid credentials") || m.includes("invalid_credentials")) {
+    if (mode === "servant") {
+      return lang === "ar"
+        ? "اسم المستخدم أو كلمة المرور غير صحيحة"
+        : "Incorrect username or password";
+    }
     return lang === "ar" ? "كلمة المرور غير صحيحة، يرجى المحاولة مجدداً" : "Incorrect password, please try again";
   }
   if (m.includes("user not found") || m.includes("not_found") || m.includes("no user")) {
@@ -33,17 +41,25 @@ function LoginPage() {
   const { theme, toggle } = useTheme();
   const { session } = useAuth();
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"servant" | "admin">("servant");
+
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   if (session) navigate({ to: "/" });
 
+  const required = lang === "ar" ? "هذا الحقل مطلوب" : "This field is required";
+
   const validate = () => {
-    const e: typeof errors = {};
-    const required = lang === "ar" ? "هذا الحقل مطلوب" : "This field is required";
-    if (!email.trim()) e.email = required;
+    const e: Record<string, string> = {};
+    if (mode === "servant") {
+      if (!username.trim()) e.username = required;
+    } else {
+      if (!email.trim()) e.email = required;
+    }
     if (!password.trim()) e.password = required;
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -53,16 +69,40 @@ function LoginPage() {
     ev.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+
+    const loginEmail = mode === "servant" ? usernameToEmail(username) : email.trim();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password,
+    });
     if (error) {
-      const msg = friendlyAuthError(error.message, lang);
-      toast.error(msg, {
+      setLoading(false);
+      toast.error(friendlyAuthError(error.message, lang, mode), {
         icon: <XCircle className="size-5 text-destructive" />,
         className: "!border-destructive/40 !bg-destructive/5",
       });
       return;
     }
+
+    // For admin mode, ensure the account actually is super_admin
+    if (mode === "admin" && data.user) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (prof?.role !== "super_admin") {
+        await supabase.auth.signOut();
+        setLoading(false);
+        toast.error(t("no_permission_login"), {
+          icon: <XCircle className="size-5 text-destructive" />,
+          className: "!border-destructive/40 !bg-destructive/5",
+        });
+        return;
+      }
+    }
+
+    setLoading(false);
     toast.success(lang === "ar" ? "تم تسجيل الدخول بنجاح" : "Signed in successfully", {
       icon: <CheckCircle2 className="size-5 text-emerald-500" />,
       className: "!border-emerald-500/40 !bg-emerald-500/5",
@@ -72,7 +112,6 @@ function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background text-foreground p-4 overflow-hidden">
-      {/* Background flourish */}
       <div className="absolute inset-0 bg-gradient-hero opacity-95" />
       <div className="absolute inset-0 bg-pattern-cross text-white" />
       <div className="absolute -top-32 -end-32 size-96 rounded-full bg-gold/20 blur-3xl" />
@@ -97,17 +136,41 @@ function LoginPage() {
         </div>
 
         <div className="rounded-3xl bg-card/95 backdrop-blur-xl border border-white/10 shadow-elegant p-6 md:p-8">
-          <h2 className="text-xl font-bold mb-1">{t("login")}</h2>
+          <div className="flex items-center gap-2 mb-1">
+            {mode === "admin" && (
+              <button
+                type="button"
+                onClick={() => { setMode("servant"); setErrors({}); }}
+                className="rounded-full p-1 hover:bg-accent/60 transition-colors"
+                aria-label={t("back_to_servant")}
+              >
+                <ArrowLeft className="size-4 rtl:rotate-180" />
+              </button>
+            )}
+            <h2 className="text-xl font-bold">
+              {mode === "servant" ? t("servant_login") : t("admin_login")}
+            </h2>
+          </div>
           <p className="text-sm text-muted-foreground mb-6">
-            {lang === "ar" ? "أدخل بياناتك للمتابعة" : "Enter your credentials to continue"}
+            {mode === "servant"
+              ? lang === "ar" ? "أدخل اسم المستخدم وكلمة المرور" : "Enter your username and password"
+              : lang === "ar" ? "تسجيل دخول المسؤول بالبريد الإلكتروني" : "Sign in with admin email"}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            <Field
-              id="email" label={t("email")} icon={<Mail className="size-4" />}
-              type="email" value={email} onChange={setEmail} error={errors.email}
-              autoComplete="email"
-            />
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate key={mode}>
+            {mode === "servant" ? (
+              <Field
+                id="username" label={t("username")} icon={<UserIcon className="size-4" />}
+                value={username} onChange={setUsername} error={errors.username}
+                autoComplete="username"
+              />
+            ) : (
+              <Field
+                id="email" label={t("email")} icon={<Mail className="size-4" />}
+                type="email" value={email} onChange={setEmail} error={errors.email}
+                autoComplete="email"
+              />
+            )}
             <Field
               id="password" label={t("password")} icon={<Lock className="size-4" />}
               type="password" value={password} onChange={setPassword} error={errors.password}
@@ -116,10 +179,19 @@ function LoginPage() {
             <Button type="submit" className="w-full h-11 bg-gradient-primary hover:opacity-95 shadow-elegant text-base font-semibold" disabled={loading}>
               {loading ? t("loading") : t("login")}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              {t("no_account")}{" "}
-              <Link to="/signup" className="text-gold font-semibold hover:underline underline-offset-4">{t("signup")}</Link>
-            </p>
+
+            {mode === "servant" && (
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => { setMode("admin"); setErrors({}); setPassword(""); }}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gold transition-colors group"
+                >
+                  <ShieldCheck className="size-3.5 group-hover:scale-110 transition-transform" />
+                  <span className="underline-offset-4 group-hover:underline">{t("admin_login")}</span>
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
@@ -128,9 +200,9 @@ function LoginPage() {
 }
 
 function Field({
-  id, label, icon, type, value, onChange, error, autoComplete,
+  id, label, icon, type = "text", value, onChange, error, autoComplete,
 }: {
-  id: string; label: string; icon: React.ReactNode; type: string;
+  id: string; label: string; icon: React.ReactNode; type?: string;
   value: string; onChange: (v: string) => void; error?: string; autoComplete?: string;
 }) {
   return (
