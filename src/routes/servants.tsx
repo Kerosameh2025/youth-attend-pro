@@ -194,6 +194,64 @@ function ServantsPage() {
           })}
         </div>
       )}
+
+      <Dialog open={!!historyOf} onOpenChange={(o) => { if (!o) setHistoryOf(null); }}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="size-5 text-gold" />
+              {t("login_history")}
+            </DialogTitle>
+            <DialogDescription className="flex items-center gap-2">
+              <span className="font-medium text-foreground">
+                {historyOf?.full_name || "—"}
+              </span>
+              {historyOf?.username && (
+                <span className="text-xs font-mono">@{historyOf.username}</span>
+              )}
+              <Badge variant="secondary" className="gap-1 ms-auto">
+                <LogIn className="size-3" />
+                {historyRows.length}
+              </Badge>
+            </DialogDescription>
+          </DialogHeader>
+
+          {historyRows.length === 0 ? (
+            <div className="text-center py-10 text-sm text-muted-foreground">
+              {t("no_login_history")}
+            </div>
+          ) : (
+            <ol className="relative ms-3 border-s border-border/60 space-y-4 py-2">
+              {historyRows.map((r) => {
+                const isMobile = (r.device_info?.type ?? "") === "mobile";
+                return (
+                  <li key={r.id} className="ms-4">
+                    <span className="absolute -start-1.5 size-3 rounded-full bg-gradient-gold shadow-gold ring-2 ring-background" />
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <time className="text-sm font-medium">{fmtDateTime(r.logged_in_at)}</time>
+                      <Badge variant="outline" className="gap-1">
+                        {isMobile
+                          ? <Smartphone className="size-3" />
+                          : <Monitor className="size-3" />}
+                        {isMobile ? t("device_mobile") : t("device_desktop")}
+                      </Badge>
+                    </div>
+                    {r.device_info?.ua && (
+                      <p className="text-[10px] text-muted-foreground mt-1 truncate font-mono">
+                        {r.device_info.ua}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoryOf(null)}>{t("close")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
