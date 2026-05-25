@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase, usernameToEmail } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -12,8 +12,12 @@ import {
   CheckCircle2, XCircle, AlertCircle, ShieldCheck, ArrowLeft,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
+import { getDeviceInfo } from "@/lib/device-info";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    reason: typeof s.reason === "string" ? (s.reason as string) : undefined,
+  }),
   component: LoginPage,
 });
 
