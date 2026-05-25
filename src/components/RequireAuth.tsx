@@ -24,5 +24,10 @@ export function RequireAuth({ children, adminOnly }: { children: ReactNode; admi
       </AppShell>
     );
   }
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      <InactivityGuard />
+      {children}
+    </AppShell>
+  );
 }
