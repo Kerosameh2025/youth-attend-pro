@@ -5,6 +5,7 @@ import {
   supabase, supabaseSecondary, usernameToEmail, type Profile,
 } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/hooks/use-auth";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +17,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   UserPlus, ShieldCheck, User as UserIcon, CheckCircle2,
   Clock, Smartphone, Monitor, History, LogIn,
+  Pencil, Trash2, KeyRound, UserPlus2, FilePenLine, Phone, ClipboardCheck,
 } from "lucide-react";
 
 export const Route = createFileRoute("/servants")({
@@ -35,6 +41,13 @@ const PERMS = [
   "perm_take_attendance",
 ] as const;
 
+const PERM_ICONS: Record<typeof PERMS[number], React.ComponentType<any>> = {
+  perm_add_student: UserPlus2,
+  perm_edit_student: FilePenLine,
+  perm_view_phones: Phone,
+  perm_take_attendance: ClipboardCheck,
+};
+
 type LoginRow = {
   id: string;
   servant_id: string;
@@ -44,11 +57,15 @@ type LoginRow = {
 
 function ServantsPage() {
   const { t, lang } = useI18n();
+  const { user } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [logins, setLogins] = useState<LoginRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [historyOf, setHistoryOf] = useState<Profile | null>(null);
+  const [editOf, setEditOf] = useState<Profile | null>(null);
+  const [deleteOf, setDeleteOf] = useState<Profile | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -57,10 +74,7 @@ function ServantsPage() {
       supabase.from("servant_logins").select("*").order("logged_in_at", { ascending: false }),
     ]);
     if (pErr) toast.error(pErr.message);
-    if (lErr && lErr.code !== "PGRST116") {
-      // Table may not yet exist — silently ignore so page still renders
-      console.warn("servant_logins:", lErr.message);
-    }
+    if (lErr && lErr.code !== "PGRST116") console.warn("servant_logins:", lErr.message);
     setProfiles((profs as Profile[]) ?? []);
     setLogins((lg as LoginRow[]) ?? []);
     setLoading(false);
@@ -97,6 +111,24 @@ function ServantsPage() {
     else toast.success(t("saved"));
   };
 
+  const doDelete = async () => {
+    if (!deleteOf) return;
+    if (deleteOf.id === user?.id) {
+      toast.error(t("cannot_delete_self"));
+      return;
+    }
+    setDeleting(true);
+    const { error } = await supabase.rpc("admin_delete_servant", { p_servant_id: deleteOf.id });
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("servant_deleted"), {
+      icon: <CheckCircle2 className="size-5 text-emerald-500" />,
+      className: "!border-emerald-500/40 !bg-emerald-500/5",
+    });
+    setDeleteOf(null);
+    load();
+  };
+
   const fmtDateTime = (iso?: string) => {
     if (!iso) return t("never_logged_in");
     const d = new Date(iso);
@@ -131,12 +163,9 @@ function ServantsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {profiles.map((p) => {
             const stats = statsByUser.get(p.id);
+            const isAdmin = p.role === "super_admin";
             return (
-              <Card
-                key={p.id}
-                className="shadow-soft hover:shadow-elegant transition-all cursor-pointer hover:-translate-y-0.5"
-                onClick={() => setHistoryOf(p)}
-              >
+              <Card key={p.id} className="shadow-soft hover:shadow-elegant transition-all">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -153,7 +182,6 @@ function ServantsPage() {
                     <select
                       className="text-xs border rounded px-2 py-1 bg-background"
                       value={p.role}
-                      onClick={(e) => e.stopPropagation()}
                       onChange={(e) => updateRole(p.id, e.target.value as any)}
                     >
                       <option value="servant">{t("servant")}</option>
@@ -161,7 +189,27 @@ function ServantsPage() {
                     </select>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3" onClick={(e) => e.stopPropagation()}>
+                <CardContent className="space-y-3">
+                  {/* Permission badges */}
+                  {!isAdmin && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {PERMS.map((k) => {
+                        const Icon = PERM_ICONS[k];
+                        const on = (p as any)[k];
+                        return (
+                          <Badge
+                            key={k}
+                            variant={on ? "default" : "outline"}
+                            className={`gap-1 ${on ? "bg-gradient-primary" : "opacity-60"}`}
+                          >
+                            <Icon className="size-3" />
+                            <span className="text-[10px]">{t(k as any)}</span>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {/* Activity row */}
                   <div
                     className="flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2 cursor-pointer hover:bg-muted/60 transition-colors"
@@ -178,16 +226,42 @@ function ServantsPage() {
                     </Badge>
                   </div>
 
+                  {/* Quick permission toggles */}
                   {PERMS.map((k) => (
                     <div key={k} className="flex items-center justify-between text-sm">
                       <span>{t(k as any)}</span>
                       <Switch
-                        checked={p.role === "super_admin" || (p as any)[k]}
-                        disabled={p.role === "super_admin"}
+                        checked={isAdmin || (p as any)[k]}
+                        disabled={isAdmin}
                         onCheckedChange={(v) => updatePerm(p.id, k, v)}
                       />
                     </div>
                   ))}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Button
+                      variant="outline" size="sm" className="flex-1"
+                      onClick={() => setHistoryOf(p)}
+                    >
+                      <History className="size-3.5 me-1" />
+                      {t("login_history")}
+                    </Button>
+                    <Button
+                      variant="outline" size="sm" className="flex-1"
+                      onClick={() => setEditOf(p)}
+                    >
+                      <Pencil className="size-3.5 me-1" />
+                      {t("edit")}
+                    </Button>
+                    <Button
+                      variant="destructive" size="sm"
+                      disabled={p.id === user?.id}
+                      onClick={() => setDeleteOf(p)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -195,6 +269,7 @@ function ServantsPage() {
         </div>
       )}
 
+      {/* Login history */}
       <Dialog open={!!historyOf} onOpenChange={(o) => { if (!o) setHistoryOf(null); }}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -252,7 +327,186 @@ function ServantsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit servant */}
+      <Dialog open={!!editOf} onOpenChange={(o) => { if (!o) setEditOf(null); }}>
+        {editOf && (
+          <EditServantDialog
+            profile={editOf}
+            lang={lang}
+            onSaved={() => { setEditOf(null); load(); }}
+          />
+        )}
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteOf} onOpenChange={(o) => { if (!o) setDeleteOf(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="size-5 text-destructive" />
+              {t("delete_servant")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("confirm_delete_servant")}
+              {deleteOf && (
+                <div className="mt-3 rounded-lg border bg-muted/30 px-3 py-2 text-foreground">
+                  <div className="font-medium">{deleteOf.full_name}</div>
+                  {deleteOf.username && (
+                    <div className="text-xs font-mono text-muted-foreground">@{deleteOf.username}</div>
+                  )}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); doDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? t("loading") : t("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+function EditServantDialog({
+  profile, lang, onSaved,
+}: { profile: Profile; lang: "ar" | "en"; onSaved: () => void }) {
+  const { t } = useI18n();
+  const [fullName, setFullName] = useState(profile.full_name ?? "");
+  const [username, setUsername] = useState(profile.username ?? "");
+  const [newPassword, setNewPassword] = useState("");
+  const [perms, setPerms] = useState({
+    perm_add_student: !!profile.perm_add_student,
+    perm_edit_student: !!profile.perm_edit_student,
+    perm_view_phones: !!profile.perm_view_phones,
+    perm_take_attendance: !!profile.perm_take_attendance,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    setError(null);
+    const uname = username.trim().toLowerCase();
+
+    if (!fullName.trim() || !uname) {
+      setError(lang === "ar" ? "الاسم واسم المستخدم مطلوبان" : "Name and username are required");
+      return;
+    }
+    if (!/^[a-z0-9_.-]{3,32}$/.test(uname)) {
+      setError(t("username_invalid"));
+      return;
+    }
+    if (newPassword && newPassword.length < 6) {
+      setError(lang === "ar" ? "كلمة المرور يجب ألا تقل عن 6 أحرف" : "Password must be at least 6 characters");
+      return;
+    }
+
+    setSaving(true);
+
+    const { error: updErr } = await supabase.rpc("admin_update_servant", {
+      p_servant_id: profile.id,
+      p_full_name: fullName.trim(),
+      p_username: uname,
+      p_perm_add_student: perms.perm_add_student,
+      p_perm_edit_student: perms.perm_edit_student,
+      p_perm_view_phones: perms.perm_view_phones,
+      p_perm_take_attendance: perms.perm_take_attendance,
+    });
+    if (updErr) {
+      setSaving(false);
+      const msg = updErr.message.includes("username taken") ? t("username_taken") : updErr.message;
+      setError(msg);
+      return;
+    }
+
+    if (newPassword) {
+      const { error: pwErr } = await supabase.rpc("admin_reset_servant_password", {
+        p_servant_id: profile.id,
+        p_new_password: newPassword,
+      });
+      if (pwErr) {
+        setSaving(false);
+        setError(pwErr.message);
+        return;
+      }
+    }
+
+    setSaving(false);
+    toast.success(newPassword ? t("password_reset_done") : t("servant_updated"), {
+      icon: <CheckCircle2 className="size-5 text-emerald-500" />,
+      className: "!border-emerald-500/40 !bg-emerald-500/5",
+    });
+    onSaved();
+  };
+
+  return (
+    <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <Pencil className="size-5 text-gold" />
+          {t("edit_servant")}
+        </DialogTitle>
+      </DialogHeader>
+      <form onSubmit={submit} className="space-y-4" noValidate>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit_full_name">{t("full_name")}</Label>
+          <Input id="edit_full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit_username">{t("username")}</Label>
+          <Input
+            id="edit_username" value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="off" dir="ltr" className="font-mono"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit_password" className="flex items-center gap-1.5">
+            <KeyRound className="size-3.5" />
+            {t("new_password")}
+          </Label>
+          <Input
+            id="edit_password" type="password" value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            autoComplete="new-password"
+            placeholder={t("leave_blank_keep")}
+          />
+        </div>
+
+        <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+          <div className="text-xs font-semibold text-muted-foreground">{t("permissions")}</div>
+          {(Object.keys(perms) as (keyof typeof perms)[]).map((k) => (
+            <div key={k} className="flex items-center justify-between text-sm">
+              <span>{t(k as any)}</span>
+              <Switch
+                checked={perms[k]}
+                onCheckedChange={(v) => setPerms((p) => ({ ...p, [k]: v }))}
+              />
+            </div>
+          ))}
+        </div>
+
+        {error && (
+          <div className="text-xs text-destructive bg-destructive/5 border border-destructive/30 rounded-lg px-3 py-2">
+            {error}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button type="submit" className="bg-gradient-primary shadow-elegant" disabled={saving}>
+            {saving ? t("loading") : t("save")}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }
 
@@ -290,7 +544,6 @@ function AddServantDialog({ onCreated, lang }: { onCreated: () => void; lang: "a
 
     setSaving(true);
 
-    // Pre-check that username is free
     const { data: existing } = await supabase
       .from("profiles").select("id").eq("username", uname).maybeSingle();
     if (existing) {
@@ -299,7 +552,6 @@ function AddServantDialog({ onCreated, lang }: { onCreated: () => void; lang: "a
       return;
     }
 
-    // Use a SECONDARY supabase client so admin's session is not replaced.
     const { data, error: signErr } = await supabaseSecondary.auth.signUp({
       email: usernameToEmail(uname),
       password,
@@ -312,10 +564,8 @@ function AddServantDialog({ onCreated, lang }: { onCreated: () => void; lang: "a
       return;
     }
 
-    // Sign the new user out of the secondary client (cleanup)
     await supabaseSecondary.auth.signOut();
 
-    // The trigger creates the profile row. Update perms via the admin's session.
     const { error: updErr } = await supabase
       .from("profiles")
       .update({
