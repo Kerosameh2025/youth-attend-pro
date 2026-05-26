@@ -58,7 +58,7 @@ type LoginRow = {
 function ServantsPage() {
   const { t, lang } = useI18n();
   const { session } = useAuth();
-  const currentUserId = session?.user?.id;
+  const currentUserId = session?.currentUserId;
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [logins, setLogins] = useState<LoginRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +114,7 @@ function ServantsPage() {
 
   const doDelete = async () => {
     if (!deleteOf) return;
-    if (deleteOf.id === user?.id) {
+    if (deleteOf.id === currentUserId) {
       toast.error(t("cannot_delete_self"));
       return;
     }
@@ -257,7 +257,7 @@ function ServantsPage() {
                     </Button>
                     <Button
                       variant="destructive" size="sm"
-                      disabled={p.id === user?.id}
+                      disabled={p.id === currentUserId}
                       onClick={() => setDeleteOf(p)}
                     >
                       <Trash2 className="size-3.5" />
