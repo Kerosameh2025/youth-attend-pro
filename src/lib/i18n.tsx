@@ -116,6 +116,16 @@ const dict: Dict = {
     en: "You were signed out automatically due to inactivity",
   },
   close: { ar: "إغلاق", en: "Close" },
+  // Phase 4 — servant CRUD
+  edit_servant: { ar: "تعديل الخادم", en: "Edit Servant" },
+  delete_servant: { ar: "حذف الخادم", en: "Delete Servant" },
+  confirm_delete_servant: { ar: "هل أنت متأكد من حذف هذا الخادم؟", en: "Are you sure you want to delete this servant?" },
+  servant_updated: { ar: "تم تحديث بيانات الخادم", en: "Servant updated" },
+  servant_deleted: { ar: "تم حذف الخادم", en: "Servant deleted" },
+  password_reset_done: { ar: "تم تغيير كلمة المرور", en: "Password updated" },
+  new_password: { ar: "كلمة المرور الجديدة", en: "New password" },
+  leave_blank_keep: { ar: "اتركه فارغاً للإبقاء على الحالي", en: "Leave blank to keep current" },
+  cannot_delete_self: { ar: "لا يمكنك حذف حسابك", en: "You cannot delete your own account" },
 };
 
 type Ctx = {
