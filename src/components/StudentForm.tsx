@@ -72,12 +72,12 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
 
   return (
     <form onSubmit={submit} className="space-y-4 bg-card p-4 md:p-6 rounded-xl border">
-      <div className="flex items-center gap-4">
-        <StudentAvatar path={photoPath} name={name || "?"} size={80} />
-        <div>
-          <Label htmlFor="photo" className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-md border bg-background hover:bg-accent">
+      <div className="flex items-center gap-4 flex-wrap">
+        <StudentAvatar path={photoPath} name={name || "?"} size={80} enlargeable />
+        <div className="flex gap-2 flex-wrap">
+          <Label htmlFor="photo" className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-md border bg-background hover:bg-accent text-sm">
             <Upload className="size-4" />
-            {uploading ? t("loading") : t("photo")}
+            {uploading ? t("loading") : photoPath ? t("change_photo") : t("photo")}
           </Label>
           <input
             id="photo"
@@ -86,8 +86,31 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
             className="hidden"
             onChange={(e) => handlePhoto(e.target.files?.[0] || null)}
           />
+          {photoPath && (
+            <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDeletePhoto(true)}>
+              <Trash2 className="size-4" /> {t("delete_photo")}
+            </Button>
+          )}
         </div>
       </div>
+
+      <AlertDialog open={confirmDeletePhoto} onOpenChange={setConfirmDeletePhoto}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("delete_photo")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirm_delete_photo")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { setPhotoPath(null); setConfirmDeletePhoto(false); toast.success(t("saved")); }}
+            >
+              {t("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
