@@ -29,6 +29,7 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
   const [photoPath, setPhotoPath] = useState(initial?.photo_path ?? null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmDeletePhoto, setConfirmDeletePhoto] = useState(false);
 
   const handlePhoto = async (file: File | null) => {
     if (!file) return;
