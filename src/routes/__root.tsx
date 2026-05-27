@@ -64,7 +64,7 @@ function RootComponent() {
         <I18nProvider>
           <AuthProvider>
             <Outlet />
-            <Toaster richColors position="top-center" />
+            <Toaster />
           </AuthProvider>
         </I18nProvider>
       </ThemeProvider>

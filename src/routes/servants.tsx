@@ -58,7 +58,7 @@ type LoginRow = {
 function ServantsPage() {
   const { t, lang } = useI18n();
   const { session } = useAuth();
-  const currentUserId = session?.currentUserId;
+  const currentUserId = session?.user?.id;
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [logins, setLogins] = useState<LoginRow[]>([]);
   const [loading, setLoading] = useState(true);

@@ -46,9 +46,21 @@ function StudentsPage() {
 
   const remove = async (id: string) => {
     if (!confirm(t("confirm_delete"))) return;
+    const snapshot = students.find((s) => s.id === id);
     const { error } = await supabase.from("students").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success(t("saved"));
+    toast.success(t("saved"), {
+      action: snapshot ? {
+        label: t("undo"),
+        onClick: async () => {
+          const { id: _id, created_at: _c, ...rest } = snapshot as any;
+          const { error: e2 } = await supabase.from("students").insert(rest);
+          if (e2) return toast.error(e2.message);
+          toast.success(t("restored"));
+          load();
+        },
+      } : undefined,
+    });
     load();
   };
 
@@ -129,7 +141,7 @@ function StudentsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((s) => (
             <div key={s.id} className="rounded-xl border bg-card p-4 flex gap-3">
-              <StudentAvatar path={s.photo_path} name={s.name} size={64} />
+              <StudentAvatar path={s.photo_path} name={s.name} size={64} enlargeable />
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-mono text-muted-foreground">#{s.code}</span>

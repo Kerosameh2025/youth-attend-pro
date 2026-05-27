@@ -126,6 +126,18 @@ const dict: Dict = {
   new_password: { ar: "كلمة المرور الجديدة", en: "New password" },
   leave_blank_keep: { ar: "اتركه فارغاً للإبقاء على الحالي", en: "Leave blank to keep current" },
   cannot_delete_self: { ar: "لا يمكنك حذف حسابك", en: "You cannot delete your own account" },
+  // Phase 5 — UI polish
+  change_photo: { ar: "تغيير الصورة", en: "Change Photo" },
+  delete_photo: { ar: "حذف الصورة", en: "Delete Photo" },
+  confirm_delete_photo: { ar: "هل تريد حذف صورة الطالب؟", en: "Remove the student photo?" },
+  delete_session: { ar: "حذف الجلسة", en: "Delete Session" },
+  confirm_delete_session: {
+    ar: "تحذير: هل أنت متأكد من حذف هذه الجلسة؟ سيتم حذف جميع بيانات الحضور المرتبطة بها نهائياً",
+    en: "Warning: are you sure you want to delete this session? All related attendance records will be permanently deleted.",
+  },
+  yes_delete: { ar: "نعم، احذف", en: "Yes, delete" },
+  undo: { ar: "تراجع", en: "Undo" },
+  restored: { ar: "تم الاسترجاع", en: "Restored" },
 };
 
 type Ctx = {
