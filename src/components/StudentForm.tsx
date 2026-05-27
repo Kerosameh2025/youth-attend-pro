@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, X, Upload } from "lucide-react";
+import { Plus, X, Upload, Trash2 } from "lucide-react";
 import { supabase, type Student } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { compressAndUploadPhoto } from "@/lib/storage";
 import { StudentAvatar } from "@/components/StudentAvatar";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function StudentForm({ initial, onDone }: { initial?: Student; onDone: () => void }) {
   const { t } = useI18n();
