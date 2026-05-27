@@ -141,7 +141,7 @@ function StudentsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((s) => (
             <div key={s.id} className="rounded-xl border bg-card p-4 flex gap-3">
-              <StudentAvatar path={s.photo_path} name={s.name} size={64} />
+              <StudentAvatar path={s.photo_path} name={s.name} size={64} enlargeable />
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-mono text-muted-foreground">#{s.code}</span>
