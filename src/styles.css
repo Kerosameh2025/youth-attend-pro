@@ -192,4 +192,29 @@ html[dir="ltr"] { font-family: "Inter", system-ui, sans-serif; }
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
+
+  /* Toast: progress bar + entrance animation */
+  @keyframes toast-progress { from { width: 100%; } to { width: 0%; } }
+  @keyframes toast-slide-in {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .lov-toast { animation: toast-slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .lov-toast::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    bottom: 0;
+    height: 3px;
+    width: 100%;
+    background: currentColor;
+    opacity: 0.45;
+    animation: toast-progress 3s linear forwards;
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+  }
+  .lov-toast-success::after { background: oklch(0.7 0.17 152); opacity: 0.7; }
+  .lov-toast-error::after   { background: var(--destructive); opacity: 0.7; }
+  .lov-toast-warning::after { background: oklch(0.78 0.16 75); opacity: 0.75; }
+  .lov-toast-info::after    { background: oklch(0.7 0.14 230); opacity: 0.7; }
 }
