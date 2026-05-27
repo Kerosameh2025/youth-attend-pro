@@ -46,9 +46,21 @@ function StudentsPage() {
 
   const remove = async (id: string) => {
     if (!confirm(t("confirm_delete"))) return;
+    const snapshot = students.find((s) => s.id === id);
     const { error } = await supabase.from("students").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success(t("saved"));
+    toast.success(t("saved"), {
+      action: snapshot ? {
+        label: t("undo"),
+        onClick: async () => {
+          const { id: _id, created_at: _c, ...rest } = snapshot as any;
+          const { error: e2 } = await supabase.from("students").insert(rest);
+          if (e2) return toast.error(e2.message);
+          toast.success(t("restored"));
+          load();
+        },
+      } : undefined,
+    });
     load();
   };
 
