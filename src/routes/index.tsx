@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/lib/i18n";
 import { AppShell } from "@/components/AppShell";
+import { BirthdaysCard } from "@/components/BirthdaysCard";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Users, CalendarCheck2, ShieldCheck, ArrowLeft, ArrowRight,
