@@ -252,6 +252,9 @@ function Index() {
           </div>
         </section>
 
+        {/* Birthdays */}
+        <BirthdaysCard />
+
         {/* Quick actions */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
           {cards.map((c, i) => (
