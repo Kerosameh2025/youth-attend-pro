@@ -48,6 +48,7 @@ export type Student = {
   code: string;
   name: string;
   age: number | null;
+  birth_date: string | null;
   phones: string[];
   address: string | null;
   school: string | null;
