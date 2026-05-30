@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useI18n } from "@/lib/i18n";
 import { AppShell } from "@/components/AppShell";
+import { BirthdaysCard } from "@/components/BirthdaysCard";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Users, CalendarCheck2, ShieldCheck, ArrowLeft, ArrowRight,
@@ -250,6 +251,9 @@ function Index() {
             )}
           </div>
         </section>
+
+        {/* Birthdays */}
+        <BirthdaysCard />
 
         {/* Quick actions */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">

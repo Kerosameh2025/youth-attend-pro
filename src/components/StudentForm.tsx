@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, X, Upload, Trash2 } from "lucide-react";
+import { Plus, X, Upload, Trash2, Calendar as CalendarIcon, AlertTriangle, Wand2 } from "lucide-react";
+import { format, parse, isValid, differenceInYears } from "date-fns";
 import { supabase, type Student } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
@@ -8,12 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { compressAndUploadPhoto } from "@/lib/storage";
 import { StudentAvatar } from "@/components/StudentAvatar";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// Compute age from a birth date relative to today.
+function ageFromBirth(d: Date): number {
+  return differenceInYears(new Date(), d);
+}
 
 export function StudentForm({ initial, onDone }: { initial?: Student; onDone: () => void }) {
   const { t } = useI18n();
@@ -34,6 +43,44 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDeletePhoto, setConfirmDeletePhoto] = useState(false);
+  const [birthDate, setBirthDate] = useState<string>(initial?.birth_date ?? ""); // YYYY-MM-DD
+  const [birthInput, setBirthInput] = useState<string>(
+    initial?.birth_date ? format(new Date(initial.birth_date), "dd/MM/yyyy") : ""
+  );
+  const [calOpen, setCalOpen] = useState(false);
+
+  const birthDateObj = useMemo(() => {
+    if (!birthDate) return null;
+    const d = new Date(birthDate);
+    return isValid(d) ? d : null;
+  }, [birthDate]);
+
+  const expectedAge = birthDateObj ? ageFromBirth(birthDateObj) : null;
+  const ageMismatch =
+    expectedAge !== null && age !== "" && Number(age) !== expectedAge;
+
+  const setBirthFromDate = (d: Date | undefined) => {
+    if (!d) {
+      setBirthDate("");
+      setBirthInput("");
+      return;
+    }
+    setBirthDate(format(d, "yyyy-MM-dd"));
+    setBirthInput(format(d, "dd/MM/yyyy"));
+    setAge(String(ageFromBirth(d)));
+  };
+
+  const onBirthTextChange = (v: string) => {
+    setBirthInput(v);
+    // Try parse dd/MM/yyyy
+    const parsed = parse(v, "dd/MM/yyyy", new Date());
+    if (isValid(parsed) && parsed.getFullYear() > 1900 && parsed <= new Date()) {
+      setBirthDate(format(parsed, "yyyy-MM-dd"));
+      setAge(String(ageFromBirth(parsed)));
+    } else if (v === "") {
+      setBirthDate("");
+    }
+  };
 
   // Auto-generate next available code when adding a new student
   useEffect(() => {
@@ -100,6 +147,7 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
       father_job: fatherJob || null,
       notes: notes || null,
       photo_path: photoPath,
+      birth_date: birthDate || null,
     };
     const q = initial
       ? supabase.from("students").update(payload).eq("id", initial.id)
@@ -163,8 +211,54 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
           <Input required value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
+          <Label>{t("birth_date")}</Label>
+          <div className="flex gap-2">
+            <Input
+              dir="ltr"
+              placeholder="dd/mm/yyyy"
+              value={birthInput}
+              onChange={(e) => onBirthTextChange(e.target.value)}
+              className="flex-1"
+            />
+            <Popover open={calOpen} onOpenChange={setCalOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="icon" aria-label={t("pick_date")}>
+                  <CalendarIcon className="size-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={birthDateObj ?? undefined}
+                  onSelect={(d) => { setBirthFromDate(d); setCalOpen(false); }}
+                  captionLayout="dropdown"
+                  fromYear={1990}
+                  toYear={new Date().getFullYear()}
+                  disabled={(d) => d > new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+        <div className="space-y-1.5">
           <Label>{t("age")}</Label>
-          <Input type="number" min={5} max={20} value={age} onChange={(e) => setAge(e.target.value)} />
+          <Input type="number" min={1} max={100} value={age} onChange={(e) => setAge(e.target.value)} />
+          {ageMismatch && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 mt-1">
+              <AlertTriangle className="size-3.5 shrink-0" />
+              <span className="flex-1">{t("age_mismatch")}</span>
+              <button
+                type="button"
+                onClick={() => expectedAge !== null && setAge(String(expectedAge))}
+                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+              >
+                <Wand2 className="size-3" />
+                {t("auto_fix_age")}
+              </button>
+            </div>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label>{t("school")}</Label>

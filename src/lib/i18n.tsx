@@ -138,6 +138,16 @@ const dict: Dict = {
   yes_delete: { ar: "نعم، احذف", en: "Yes, delete" },
   undo: { ar: "تراجع", en: "Undo" },
   restored: { ar: "تم الاسترجاع", en: "Restored" },
+  // Phase 6 — Birth date & birthdays
+  birth_date: { ar: "تاريخ الميلاد", en: "Date of Birth" },
+  pick_date: { ar: "اختر التاريخ", en: "Pick a date" },
+  age_mismatch: { ar: "العمر غير متوافق مع تاريخ الميلاد", en: "Age doesn't match birth date" },
+  auto_fix_age: { ar: "تصحيح العمر تلقائياً", en: "Auto-fix age" },
+  birthdays: { ar: "أعياد الميلاد", en: "Birthdays" },
+  no_birthdays_month: { ar: "لا توجد أعياد ميلاد في هذا الشهر", en: "No birthdays this month" },
+  week_n: { ar: "الأسبوع", en: "Week" },
+  turns_age: { ar: "يُتم", en: "turns" },
+  years_old: { ar: "سنة", en: "years" },
 };
 
 type Ctx = {
