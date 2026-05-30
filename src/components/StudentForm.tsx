@@ -77,9 +77,21 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const codeTrim = code.trim();
+    if (!codeTrim) return toast.error(t("code"));
     setSaving(true);
+    // Duplicate code check
+    const { data: existing } = await supabase
+      .from("students")
+      .select("id")
+      .eq("code", codeTrim)
+      .maybeSingle();
+    if (existing && existing.id !== initial?.id) {
+      setSaving(false);
+      return toast.error(t("code_exists") || "Code already exists");
+    }
     const payload = {
-      code: code.trim(),
+      code: codeTrim,
       name: name.trim(),
       age: age ? Number(age) : null,
       phones: phones.map((p) => p.trim()).filter(Boolean),
