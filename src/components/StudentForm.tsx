@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, X, Upload, Trash2 } from "lucide-react";
+import { Plus, X, Upload, Trash2, Calendar as CalendarIcon, AlertTriangle, Wand2 } from "lucide-react";
+import { format, parse, isValid, differenceInYears } from "date-fns";
 import { supabase, type Student } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
@@ -8,12 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { compressAndUploadPhoto } from "@/lib/storage";
 import { StudentAvatar } from "@/components/StudentAvatar";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// Compute age from a birth date relative to today.
+function ageFromBirth(d: Date): number {
+  return differenceInYears(new Date(), d);
+}
 
 export function StudentForm({ initial, onDone }: { initial?: Student; onDone: () => void }) {
   const { t } = useI18n();
