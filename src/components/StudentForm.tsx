@@ -43,6 +43,44 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDeletePhoto, setConfirmDeletePhoto] = useState(false);
+  const [birthDate, setBirthDate] = useState<string>(initial?.birth_date ?? ""); // YYYY-MM-DD
+  const [birthInput, setBirthInput] = useState<string>(
+    initial?.birth_date ? format(new Date(initial.birth_date), "dd/MM/yyyy") : ""
+  );
+  const [calOpen, setCalOpen] = useState(false);
+
+  const birthDateObj = useMemo(() => {
+    if (!birthDate) return null;
+    const d = new Date(birthDate);
+    return isValid(d) ? d : null;
+  }, [birthDate]);
+
+  const expectedAge = birthDateObj ? ageFromBirth(birthDateObj) : null;
+  const ageMismatch =
+    expectedAge !== null && age !== "" && Number(age) !== expectedAge;
+
+  const setBirthFromDate = (d: Date | undefined) => {
+    if (!d) {
+      setBirthDate("");
+      setBirthInput("");
+      return;
+    }
+    setBirthDate(format(d, "yyyy-MM-dd"));
+    setBirthInput(format(d, "dd/MM/yyyy"));
+    setAge(String(ageFromBirth(d)));
+  };
+
+  const onBirthTextChange = (v: string) => {
+    setBirthInput(v);
+    // Try parse dd/MM/yyyy
+    const parsed = parse(v, "dd/MM/yyyy", new Date());
+    if (isValid(parsed) && parsed.getFullYear() > 1900 && parsed <= new Date()) {
+      setBirthDate(format(parsed, "yyyy-MM-dd"));
+      setAge(String(ageFromBirth(parsed)));
+    } else if (v === "") {
+      setBirthDate("");
+    }
+  };
 
   // Auto-generate next available code when adding a new student
   useEffect(() => {
