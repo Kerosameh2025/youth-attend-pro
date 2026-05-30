@@ -211,10 +211,55 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
           <Input required value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label>{t("age")}</Label>
-          <Input type="number" min={5} max={20} value={age} onChange={(e) => setAge(e.target.value)} />
+          <Label>{t("birth_date")}</Label>
+          <div className="flex gap-2">
+            <Input
+              dir="ltr"
+              placeholder="dd/mm/yyyy"
+              value={birthInput}
+              onChange={(e) => onBirthTextChange(e.target.value)}
+              className="flex-1"
+            />
+            <Popover open={calOpen} onOpenChange={setCalOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="icon" aria-label={t("pick_date")}>
+                  <CalendarIcon className="size-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={birthDateObj ?? undefined}
+                  onSelect={(d) => { setBirthFromDate(d); setCalOpen(false); }}
+                  captionLayout="dropdown"
+                  fromYear={1990}
+                  toYear={new Date().getFullYear()}
+                  disabled={(d) => d > new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
         <div className="space-y-1.5">
+          <Label>{t("age")}</Label>
+          <Input type="number" min={1} max={100} value={age} onChange={(e) => setAge(e.target.value)} />
+          {ageMismatch && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 mt-1">
+              <AlertTriangle className="size-3.5 shrink-0" />
+              <span className="flex-1">{t("age_mismatch")}</span>
+              <button
+                type="button"
+                onClick={() => expectedAge !== null && setAge(String(expectedAge))}
+                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+              >
+                <Wand2 className="size-3" />
+                {t("auto_fix_age")}
+              </button>
+            </div>
+          )}
+        </div>
           <Label>{t("school")}</Label>
           <Input value={school ?? ""} onChange={(e) => setSchool(e.target.value)} />
         </div>
