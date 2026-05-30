@@ -156,7 +156,7 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>{t("code")} *</Label>
-          <Input required value={code} onChange={(e) => setCode(e.target.value)} />
+          <Input required value={code} onChange={(e) => setCode(e.target.value)} readOnly={!canEditCode} />
         </div>
         <div className="space-y-1.5">
           <Label>{t("name")} *</Label>
