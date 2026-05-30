@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, X, Upload, Trash2 } from "lucide-react";
 import { supabase, type Student } from "@/integrations/supabase/client";
@@ -17,7 +17,11 @@ import {
 
 export function StudentForm({ initial, onDone }: { initial?: Student; onDone: () => void }) {
   const { t } = useI18n();
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
+  const isNew = !initial;
+  const canEditCode =
+    profile?.role === "super_admin" ||
+    (isNew ? !!profile?.perm_add_student : !!profile?.perm_edit_student);
   const [code, setCode] = useState(initial?.code ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [age, setAge] = useState<string>(initial?.age?.toString() ?? "");
@@ -30,6 +34,31 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDeletePhoto, setConfirmDeletePhoto] = useState(false);
+
+  // Auto-generate next available code when adding a new student
+  useEffect(() => {
+    if (!isNew) return;
+    let cancelled = false;
+    (async () => {
+      const { count } = await supabase
+        .from("students")
+        .select("*", { count: "exact", head: true });
+      if (cancelled || count == null) return;
+      let next = count + 1;
+      // Skip codes that already exist (handles gaps / pre-existing duplicates)
+      while (!cancelled) {
+        const { data } = await supabase
+          .from("students")
+          .select("id")
+          .eq("code", String(next))
+          .maybeSingle();
+        if (!data) break;
+        next++;
+      }
+      if (!cancelled) setCode((prev) => prev || String(next));
+    })();
+    return () => { cancelled = true; };
+  }, [isNew]);
 
   const handlePhoto = async (file: File | null) => {
     if (!file) return;
