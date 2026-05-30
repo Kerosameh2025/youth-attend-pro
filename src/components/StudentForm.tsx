@@ -260,6 +260,7 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
             </div>
           )}
         </div>
+        <div className="space-y-1.5">
           <Label>{t("school")}</Label>
           <Input value={school ?? ""} onChange={(e) => setSchool(e.target.value)} />
         </div>
