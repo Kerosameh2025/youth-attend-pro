@@ -147,6 +147,7 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
       father_job: fatherJob || null,
       notes: notes || null,
       photo_path: photoPath,
+      birth_date: birthDate || null,
     };
     const q = initial
       ? supabase.from("students").update(payload).eq("id", initial.id)
