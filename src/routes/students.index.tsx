@@ -34,6 +34,8 @@ function StudentsPage() {
 
   useEffect(() => { localStorage.setItem("students:searchField", searchField); }, [searchField]);
   useEffect(() => { localStorage.setItem("students:sortField", sortField); }, [sortField]);
+  const canAdd = profile?.role === "super_admin" || profile?.perm_add_student;
+  const canEdit = profile?.role === "super_admin" || profile?.perm_edit_student;
   const canDelete = profile?.role === "super_admin";
   const canViewPhones = profile?.role === "super_admin" || profile?.perm_view_phones;
 
