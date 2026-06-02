@@ -29,9 +29,11 @@ function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [searchField, setSearchField] = useState<SearchField>(() => (localStorage.getItem("students:searchField") as SearchField) || "name");
+  const [sortField, setSortField] = useState<SortField>(() => (localStorage.getItem("students:sortField") as SortField) || "code");
 
-  const canAdd = profile?.role === "super_admin" || profile?.perm_add_student;
-  const canEdit = profile?.role === "super_admin" || profile?.perm_edit_student;
+  useEffect(() => { localStorage.setItem("students:searchField", searchField); }, [searchField]);
+  useEffect(() => { localStorage.setItem("students:sortField", sortField); }, [sortField]);
   const canDelete = profile?.role === "super_admin";
   const canViewPhones = profile?.role === "super_admin" || profile?.perm_view_phones;
 
