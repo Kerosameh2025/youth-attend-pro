@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServantsRouteImport } from './routes/servants'
+import { Route as PhoneDemoRouteImport } from './routes/phone-demo'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StudentsIndexRouteImport } from './routes/students.index'
@@ -22,6 +23,11 @@ import { Route as AttendanceSessionIdRouteImport } from './routes/attendance.$se
 const ServantsRoute = ServantsRouteImport.update({
   id: '/servants',
   path: '/servants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhoneDemoRoute = PhoneDemoRouteImport.update({
+  id: '/phone-demo',
+  path: '/phone-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -68,6 +74,7 @@ const AttendanceSessionIdRoute = AttendanceSessionIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/phone-demo': typeof PhoneDemoRoute
   '/servants': typeof ServantsRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/phone-demo': typeof PhoneDemoRoute
   '/servants': typeof ServantsRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/phone-demo': typeof PhoneDemoRoute
   '/servants': typeof ServantsRoute
   '/attendance/$sessionId': typeof AttendanceSessionIdRoute
   '/students/$id': typeof StudentsIdRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/phone-demo'
     | '/servants'
     | '/attendance/$sessionId'
     | '/students/$id'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/phone-demo'
     | '/servants'
     | '/attendance/$sessionId'
     | '/students/$id'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/phone-demo'
     | '/servants'
     | '/attendance/$sessionId'
     | '/students/$id'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  PhoneDemoRoute: typeof PhoneDemoRoute
   ServantsRoute: typeof ServantsRoute
   AttendanceSessionIdRoute: typeof AttendanceSessionIdRoute
   StudentsIdRoute: typeof StudentsIdRoute
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/servants'
       fullPath: '/servants'
       preLoaderRoute: typeof ServantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/phone-demo': {
+      id: '/phone-demo'
+      path: '/phone-demo'
+      fullPath: '/phone-demo'
+      preLoaderRoute: typeof PhoneDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  PhoneDemoRoute: PhoneDemoRoute,
   ServantsRoute: ServantsRoute,
   AttendanceSessionIdRoute: AttendanceSessionIdRoute,
   StudentsIdRoute: StudentsIdRoute,
@@ -229,3 +250,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
