@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Search, Upload, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase, type Student } from "@/integrations/supabase/client";
@@ -8,8 +8,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StudentAvatar } from "@/components/StudentAvatar";
 import { exportToExcel, exportToPDF } from "@/lib/export";
+
+type SearchField = "name" | "code" | "phone" | "address" | "birth_date" | "father_job" | "age" | "school";
+type SortField = "code" | "birth_date" | "school";
 
 export const Route = createFileRoute("/students/")({
   component: () => (
@@ -25,7 +29,11 @@ function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [searchField, setSearchField] = useState<SearchField>(() => (localStorage.getItem("students:searchField") as SearchField) || "name");
+  const [sortField, setSortField] = useState<SortField>(() => (localStorage.getItem("students:sortField") as SortField) || "code");
 
+  useEffect(() => { localStorage.setItem("students:searchField", searchField); }, [searchField]);
+  useEffect(() => { localStorage.setItem("students:sortField", sortField); }, [sortField]);
   const canAdd = profile?.role === "super_admin" || profile?.perm_add_student;
   const canEdit = profile?.role === "super_admin" || profile?.perm_edit_student;
   const canDelete = profile?.role === "super_admin";
@@ -64,9 +72,43 @@ function StudentsPage() {
     load();
   };
 
-  const filtered = students.filter((s) =>
-    !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.code.toLowerCase().includes(q.toLowerCase())
-  );
+  const matchesSearch = (s: Student) => {
+    if (!q) return true;
+    const needle = q.toLowerCase().trim();
+    const fieldVal = (() => {
+      switch (searchField) {
+        case "name": return s.name;
+        case "code": return s.code;
+        case "phone": return (s.phones ?? []).join(" ");
+        case "address": return s.address ?? "";
+        case "birth_date": return s.birth_date ?? "";
+        case "father_job": return s.father_job ?? "";
+        case "age": return s.age != null ? String(s.age) : "";
+        case "school": return s.school ?? "";
+      }
+    })();
+    return (fieldVal ?? "").toString().toLowerCase().includes(needle);
+  };
+
+  const filtered = useMemo(() => {
+    const arr = students.filter(matchesSearch);
+    const sorted = [...arr].sort((a, b) => {
+      if (sortField === "code") {
+        const na = Number(a.code), nb = Number(b.code);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.code.localeCompare(b.code);
+      }
+      if (sortField === "birth_date") {
+        return (a.birth_date ?? "").localeCompare(b.birth_date ?? "");
+      }
+      if (sortField === "school") {
+        return (a.school ?? "").localeCompare(b.school ?? "", lang === "ar" ? "ar" : "en");
+      }
+      return 0;
+    });
+    return sorted;
+  }, [students, q, searchField, sortField, lang]);
+
 
   
 
@@ -128,9 +170,34 @@ function StudentsPage() {
         </div>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="size-4 absolute top-2.5 start-3 text-muted-foreground" />
-        <Input className="ps-9" placeholder={t("search")} value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="size-4 absolute top-1/2 -translate-y-1/2 start-3 text-muted-foreground pointer-events-none" />
+          <Input className="ps-9" placeholder={t("search")} value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        <Select value={searchField} onValueChange={(v) => setSearchField(v as SearchField)}>
+          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">{t("name")}</SelectItem>
+            <SelectItem value="code">{t("code")}</SelectItem>
+            <SelectItem value="phone">{t("phones")}</SelectItem>
+            <SelectItem value="address">{t("address")}</SelectItem>
+            <SelectItem value="birth_date">{t("birth_date")}</SelectItem>
+            <SelectItem value="father_job">{t("father_job")}</SelectItem>
+            <SelectItem value="age">{t("age")}</SelectItem>
+            <SelectItem value="school">{t("school")}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={lang === "ar" ? "ترتيب حسب" : "Sort by"} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="code">{t("code")}</SelectItem>
+            <SelectItem value="birth_date">{t("birth_date")}</SelectItem>
+            <SelectItem value="school">{t("school")}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (
@@ -138,36 +205,56 @@ function StudentsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">{t("no_students")}</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((s) => (
-            <div key={s.id} className="rounded-xl border bg-card p-4 flex gap-3">
-              <StudentAvatar path={s.photo_path} name={s.name} size={64} enlargeable />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xs font-mono text-muted-foreground">#{s.code}</span>
-                </div>
-                <div className="font-semibold truncate">{s.name}</div>
-                <div className="text-sm text-muted-foreground truncate">{s.school || "—"}</div>
-                <div className="text-sm text-muted-foreground truncate" dir="ltr">
-                  {canViewPhones
-                    ? s.phones?.[0] || t("no_phone")
-                    : s.phones?.length ? `••• (${t("hidden")})` : t("no_phone")}
-                </div>
-                <div className="flex gap-1 mt-2">
-                  {canEdit && (
-                    <Button asChild size="sm" variant="outline">
-                      <Link to="/students/$id" params={{ id: s.id }}><Pencil className="size-3" /> {t("edit")}</Link>
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button size="sm" variant="ghost" onClick={() => remove(s.id)}>
-                      <Trash2 className="size-3" />
-                    </Button>
-                  )}
+        <div className="space-y-6">
+          {Array.from({ length: Math.ceil(filtered.length / 10) }).map((_, gi) => {
+            const group = filtered.slice(gi * 10, gi * 10 + 10);
+            const start = gi * 10 + 1;
+            const end = gi * 10 + group.length;
+            return (
+              <div key={gi} className="space-y-3">
+                {gi > 0 && (
+                  <div className="flex items-center gap-3" aria-hidden>
+                    <span className="h-px flex-1 bg-border" />
+                    <span className="text-xs font-mono text-muted-foreground px-2">
+                      {start} - {end}
+                    </span>
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {group.map((s) => (
+                    <div key={s.id} className="rounded-xl border bg-card p-4 flex gap-3">
+                      <StudentAvatar path={s.photo_path} name={s.name} size={64} enlargeable />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xs font-mono text-muted-foreground">#{s.code}</span>
+                        </div>
+                        <div className="font-semibold truncate">{s.name}</div>
+                        <div className="text-sm text-muted-foreground truncate">{s.school || "—"}</div>
+                        <div className="text-sm text-muted-foreground truncate" dir="ltr">
+                          {canViewPhones
+                            ? s.phones?.[0] || t("no_phone")
+                            : s.phones?.length ? `••• (${t("hidden")})` : t("no_phone")}
+                        </div>
+                        <div className="flex gap-1 mt-2">
+                          {canEdit && (
+                            <Button asChild size="sm" variant="outline">
+                              <Link to="/students/$id" params={{ id: s.id }}><Pencil className="size-3" /> {t("edit")}</Link>
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button size="sm" variant="ghost" onClick={() => remove(s.id)}>
+                              <Trash2 className="size-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
