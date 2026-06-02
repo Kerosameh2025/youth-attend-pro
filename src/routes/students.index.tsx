@@ -72,9 +72,43 @@ function StudentsPage() {
     load();
   };
 
-  const filtered = students.filter((s) =>
-    !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.code.toLowerCase().includes(q.toLowerCase())
-  );
+  const matchesSearch = (s: Student) => {
+    if (!q) return true;
+    const needle = q.toLowerCase().trim();
+    const fieldVal = (() => {
+      switch (searchField) {
+        case "name": return s.name;
+        case "code": return s.code;
+        case "phone": return (s.phones ?? []).join(" ");
+        case "address": return s.address ?? "";
+        case "birth_date": return s.birth_date ?? "";
+        case "father_job": return s.father_job ?? "";
+        case "age": return s.age != null ? String(s.age) : "";
+        case "school": return s.school ?? "";
+      }
+    })();
+    return (fieldVal ?? "").toString().toLowerCase().includes(needle);
+  };
+
+  const filtered = useMemo(() => {
+    const arr = students.filter(matchesSearch);
+    const sorted = [...arr].sort((a, b) => {
+      if (sortField === "code") {
+        const na = Number(a.code), nb = Number(b.code);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.code.localeCompare(b.code);
+      }
+      if (sortField === "birth_date") {
+        return (a.birth_date ?? "").localeCompare(b.birth_date ?? "");
+      }
+      if (sortField === "school") {
+        return (a.school ?? "").localeCompare(b.school ?? "", lang === "ar" ? "ar" : "en");
+      }
+      return 0;
+    });
+    return sorted;
+  }, [students, q, searchField, sortField, lang]);
+
 
   
 
