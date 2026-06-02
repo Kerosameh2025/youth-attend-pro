@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Search, Upload, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase, type Student } from "@/integrations/supabase/client";
@@ -8,8 +8,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StudentAvatar } from "@/components/StudentAvatar";
 import { exportToExcel, exportToPDF } from "@/lib/export";
+
+type SearchField = "name" | "code" | "phone" | "address" | "birth_date" | "father_job" | "age" | "school";
+type SortField = "code" | "birth_date" | "school";
 
 export const Route = createFileRoute("/students/")({
   component: () => (
