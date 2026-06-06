@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StudentAvatar } from "@/components/StudentAvatar";
 import { exportToExcel, exportToPDF } from "@/lib/export";
 
-type SearchField = "name" | "code" | "phone" | "address" | "birth_date" | "father_job" | "age" | "school";
+type SearchField = "all" | "name" | "code" | "phone" | "address" | "birth_date" | "father_job" | "age" | "school";
 type SortField = "code" | "birth_date" | "school";
 
 export const Route = createFileRoute("/students/")({
