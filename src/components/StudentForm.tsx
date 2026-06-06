@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { compressAndUploadPhoto } from "@/lib/storage";
 import { StudentAvatar } from "@/components/StudentAvatar";
+import { PhoneInput } from "@/components/ui/phone-input";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
