@@ -142,7 +142,9 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
       code: codeTrim,
       name: name.trim(),
       age: age ? Number(age) : null,
-      phones: phones.map((p) => p.trim()).filter(Boolean),
+      phones: phones
+        .map((p) => (p ?? "").trim())
+        .filter((p) => p && p.replace(/^\+20/, "").replace(/\D/g, "").length > 0),
       address: address || null,
       school: school || null,
       father_job: fatherJob || null,
