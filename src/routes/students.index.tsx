@@ -183,34 +183,43 @@ function StudentsPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="size-4 absolute top-1/2 -translate-y-1/2 start-3 text-muted-foreground pointer-events-none" />
-          <Input className="ps-9" placeholder={t("search")} value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="size-4 absolute top-1/2 -translate-y-1/2 start-3 text-muted-foreground pointer-events-none" />
+            <Input className="ps-9" placeholder={t("search")} value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">{t("search_in")}</span>
+            <Select value={searchField} onValueChange={(v) => setSearchField(v as SearchField)}>
+              <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("comprehensive_search")}</SelectItem>
+                <SelectItem value="name">{t("name")}</SelectItem>
+                <SelectItem value="code">{t("code")}</SelectItem>
+                <SelectItem value="phone">{t("phones")}</SelectItem>
+                <SelectItem value="address">{t("address")}</SelectItem>
+                <SelectItem value="birth_date">{t("birth_date")}</SelectItem>
+                <SelectItem value="father_job">{t("father_job")}</SelectItem>
+                <SelectItem value="age">{t("age")}</SelectItem>
+                <SelectItem value="school">{t("school")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <Select value={searchField} onValueChange={(v) => setSearchField(v as SearchField)}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name">{t("name")}</SelectItem>
-            <SelectItem value="code">{t("code")}</SelectItem>
-            <SelectItem value="phone">{t("phones")}</SelectItem>
-            <SelectItem value="address">{t("address")}</SelectItem>
-            <SelectItem value="birth_date">{t("birth_date")}</SelectItem>
-            <SelectItem value="father_job">{t("father_job")}</SelectItem>
-            <SelectItem value="age">{t("age")}</SelectItem>
-            <SelectItem value="school">{t("school")}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={lang === "ar" ? "ترتيب حسب" : "Sort by"} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="code">{t("code")}</SelectItem>
-            <SelectItem value="birth_date">{t("birth_date")}</SelectItem>
-            <SelectItem value="school">{t("school")}</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">{t("sort_by")}</span>
+          <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="code">{t("code")}</SelectItem>
+              <SelectItem value="birth_date">{t("birth_date")}</SelectItem>
+              <SelectItem value="school">{t("school")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {loading ? (
