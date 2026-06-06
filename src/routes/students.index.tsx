@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StudentAvatar } from "@/components/StudentAvatar";
+import { PhoneDisplay } from "@/components/ui/phone-input";
 import { exportToExcel, exportToPDF } from "@/lib/export";
 
 type SearchField = "all" | "name" | "code" | "phone" | "address" | "birth_date" | "father_job" | "age" | "school";
@@ -253,10 +254,16 @@ function StudentsPage() {
                         </div>
                         <div className="font-semibold truncate">{s.name}</div>
                         <div className="text-sm text-muted-foreground truncate">{s.school || "—"}</div>
-                        <div className="text-sm text-muted-foreground truncate" dir="ltr">
-                          {canViewPhones
-                            ? s.phones?.[0] || t("no_phone")
-                            : s.phones?.length ? `••• (${t("hidden")})` : t("no_phone")}
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {canViewPhones ? (
+                            s.phones?.[0] ? (
+                              <PhoneDisplay value={s.phones[0]} className="px-2.5 py-1.5 rounded-xl" />
+                            ) : (
+                              <span>{t("no_phone")}</span>
+                            )
+                          ) : (
+                            <span dir="ltr">{s.phones?.length ? `••• (${t("hidden")})` : t("no_phone")}</span>
+                          )}
                         </div>
                         <div className="flex gap-1 mt-2">
                           {canEdit && (
