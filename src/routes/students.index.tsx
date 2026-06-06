@@ -29,7 +29,7 @@ function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-  const [searchField, setSearchField] = useState<SearchField>(() => (localStorage.getItem("students:searchField") as SearchField) || "name");
+  const [searchField, setSearchField] = useState<SearchField>(() => (localStorage.getItem("students:searchField") as SearchField) || "all");
   const [sortField, setSortField] = useState<SortField>(() => (localStorage.getItem("students:sortField") as SortField) || "code");
 
   useEffect(() => { localStorage.setItem("students:searchField", searchField); }, [searchField]);
