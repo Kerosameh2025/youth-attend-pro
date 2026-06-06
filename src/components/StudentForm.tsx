@@ -280,13 +280,25 @@ export function StudentForm({ initial, onDone }: { initial?: Student; onDone: ()
       <div className="space-y-2">
         <Label>{t("phones")}</Label>
         {phones.map((p, i) => (
-          <div key={i} className="flex gap-2">
-            <Input
-              dir="ltr"
-              value={p}
-              onChange={(e) => setPhones(phones.map((x, j) => (i === j ? e.target.value : x)))}
-            />
-            <Button type="button" variant="ghost" size="icon" onClick={() => setPhones(phones.filter((_, j) => j !== i))}>
+          <div key={i} className="flex items-start gap-2">
+            <div className="flex-1">
+              <PhoneInput
+                label=""
+                hint=""
+                value={p}
+                onChange={(e164) =>
+                  setPhones(phones.map((x, j) => (i === j ? e164 : x)))
+                }
+              />
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="mt-1"
+              onClick={() => setPhones(phones.filter((_, j) => j !== i))}
+              aria-label={t("delete")}
+            >
               <X className="size-4" />
             </Button>
           </div>
