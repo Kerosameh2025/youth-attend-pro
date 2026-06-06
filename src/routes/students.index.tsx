@@ -75,6 +75,19 @@ function StudentsPage() {
   const matchesSearch = (s: Student) => {
     if (!q) return true;
     const needle = q.toLowerCase().trim();
+    if (searchField === "all") {
+      const allText = [
+        s.name,
+        s.code,
+        (s.phones ?? []).join(" "),
+        s.address,
+        s.birth_date,
+        s.father_job,
+        s.age != null ? String(s.age) : "",
+        s.school,
+      ].join(" ").toLowerCase();
+      return allText.includes(needle);
+    }
     const fieldVal = (() => {
       switch (searchField) {
         case "name": return s.name;
