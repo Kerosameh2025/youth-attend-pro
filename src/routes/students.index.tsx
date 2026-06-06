@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StudentAvatar } from "@/components/StudentAvatar";
+import { PhoneDisplay } from "@/components/ui/phone-input";
 import { exportToExcel, exportToPDF } from "@/lib/export";
 
 type SearchField = "all" | "name" | "code" | "phone" | "address" | "birth_date" | "father_job" | "age" | "school";
