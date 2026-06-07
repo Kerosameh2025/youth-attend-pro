@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { Upload, ArrowRight, FileSpreadsheet, CheckCircle2, Loader2 } from "lucide-react";
+import { Upload, ArrowRight, FileSpreadsheet, CheckCircle2, Loader2, FileCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
