@@ -94,6 +94,10 @@ function ImportPage() {
   const [mapping, setMapping] = useState<Record<FieldKey, string>>({} as Record<FieldKey, string>);
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [droppedFileName, setDroppedFileName] = useState("");
+  const dragCounter = useRef(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!canAdd) {
     return <div className="text-center py-12 text-muted-foreground">{t("no_permission")}</div>;
