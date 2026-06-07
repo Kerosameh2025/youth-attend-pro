@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { Upload, ArrowRight, FileSpreadsheet, CheckCircle2, Loader2 } from "lucide-react";
+import { Upload, ArrowRight, FileSpreadsheet, CheckCircle2, Loader2, FileCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import { RequireAuth } from "@/components/RequireAuth";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseSpreadsheet, smartMatch } from "@/lib/export";
@@ -94,31 +95,96 @@ function ImportPage() {
   const [mapping, setMapping] = useState<Record<FieldKey, string>>({} as Record<FieldKey, string>);
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [droppedFileName, setDroppedFileName] = useState("");
+  const dragCounter = useRef(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const ALLOWED_TYPES = [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
+    "text/csv",
+  ];
+  const ALLOWED_EXTS = [".xlsx", ".xls", ".csv"];
+
+  const isAllowedFile = (file: File) =>
+    ALLOWED_TYPES.includes(file.type) ||
+    ALLOWED_EXTS.some((ext) => file.name.toLowerCase().endsWith(ext));
+
+  const processFile = useCallback(
+    async (file: File) => {
+      if (!isAllowedFile(file)) {
+        toast.error(
+          lang === "ar"
+            ? "نوع الملف غير مدعوم. يرجى رفع ملف Excel أو CSV"
+            : "Unsupported file type. Please upload an Excel or CSV file"
+        );
+        setDragActive(false);
+        return;
+      }
+      try {
+        const { headers, rows } = await parseSpreadsheet(file);
+        setHeaders(headers);
+        setRows(rows);
+        setFileName(file.name);
+        setDroppedFileName(file.name);
+        const map = {} as Record<FieldKey, string>;
+        (Object.keys(FIELD_ALIASES) as FieldKey[]).forEach((k) => {
+          const match = smartMatch(headers, [k, ...FIELD_ALIASES[k].aliases]);
+          if (match) map[k] = match;
+        });
+        setMapping(map);
+        toast.success(`${rows.length} ${t("rows_detected")}`);
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
+    },
+    [lang, t]
+  );
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) setDragActive(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    dragCounter.current = 0;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      processFile(file);
+      e.dataTransfer.clearData();
+    }
+  };
+
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    await processFile(f);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   if (!canAdd) {
     return <div className="text-center py-12 text-muted-foreground">{t("no_permission")}</div>;
   }
-
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    try {
-      const { headers, rows } = await parseSpreadsheet(f);
-      setHeaders(headers);
-      setRows(rows);
-      setFileName(f.name);
-      // Smart mapping
-      const map = {} as Record<FieldKey, string>;
-      (Object.keys(FIELD_ALIASES) as FieldKey[]).forEach((k) => {
-        const match = smartMatch(headers, [k, ...FIELD_ALIASES[k].aliases]);
-        if (match) map[k] = match;
-      });
-      setMapping(map);
-      toast.success(`${rows.length} ${t("rows_detected")}`);
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
 
   const startImport = async () => {
     if (!mapping.name && !mapping.code) {
@@ -195,17 +261,60 @@ function ImportPage() {
         </div>
       </div>
 
-      {/* Upload */}
+      {/* Upload / Drop zone */}
       {!rows.length && (
-        <label className="block rounded-2xl border-2 border-dashed border-border/60 bg-card p-10 text-center cursor-pointer hover:bg-accent/30 transition-colors">
-          <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={onFile} />
-          <FileSpreadsheet className="size-12 mx-auto text-gold" />
-          <div className="mt-3 font-semibold">{t("upload_file")}</div>
-          <div className="text-xs text-muted-foreground mt-1">.xlsx · .xls · .csv</div>
-          <Button type="button" className="mt-4 pointer-events-none">
-            <Upload className="size-4" /> {t("upload")}
-          </Button>
-        </label>
+        <div
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={cn(
+            "relative block rounded-2xl border-2 border-dashed p-10 text-center cursor-pointer transition-all duration-300 ease-out select-none",
+            dragActive
+              ? "border-gold bg-accent/40 shadow-gold scale-[1.01]"
+              : droppedFileName
+                ? "border-emerald-400/60 bg-emerald-500/5"
+                : "border-border/60 bg-card hover:bg-accent/30 hover:border-gold/50"
+          )}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={handleInputChange}
+          />
+          <div className="transition-transform duration-300 ease-out">
+            {droppedFileName ? (
+              <FileCheck className="size-12 mx-auto text-emerald-500" />
+            ) : dragActive ? (
+              <Upload className="size-12 mx-auto text-gold animate-bounce" />
+            ) : (
+              <FileSpreadsheet className="size-12 mx-auto text-gold" />
+            )}
+          </div>
+          <div className="mt-3 font-semibold transition-colors duration-200">
+            {dragActive
+              ? lang === "ar"
+                ? "أفلت الملف هنا"
+                : "Drop the file here"
+              : droppedFileName
+                ? droppedFileName
+                : lang === "ar"
+                  ? "اسحب الملف هنا أو اضغط للاختيار"
+                  : "Drag file here or click to choose"}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {!droppedFileName && ".xlsx · .xls · .csv"}
+          </div>
+          {!droppedFileName && (
+            <Button type="button" className="mt-4 pointer-events-none" variant="outline">
+              <Upload className="size-4" />
+              {lang === "ar" ? "اختيار ملف" : "Choose file"}
+            </Button>
+          )}
+        </div>
       )}
 
       {/* Mapping + preview */}
