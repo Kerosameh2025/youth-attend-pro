@@ -127,17 +127,27 @@ function ImportPage() {
     }
     setImporting(true);
     try {
+      let skippedPhones = 0;
       const toInsert = rows.map((r, idx) => {
         const phonesRaw = mapping.phones ? String(r[mapping.phones] ?? "") : "";
-        const phones = phonesRaw
+        const phoneParts = phonesRaw
           ? phonesRaw.split(/[,/|;\n]+/).map((p) => p.trim()).filter(Boolean)
           : [];
+        const phones: string[] = [];
+        for (const p of phoneParts) {
+          const norm = normalizeEgPhone(p);
+          if (norm) phones.push(norm);
+          else skippedPhones++;
+        }
+        const birth_date = mapping.birth_date ? parseBirthDate(r[mapping.birth_date]) : null;
         const ageRaw = mapping.age ? r[mapping.age] : null;
-        const age = ageRaw != null && ageRaw !== "" ? Number(ageRaw) : null;
+        let age: number | null = ageRaw != null && ageRaw !== "" ? Number(ageRaw) : null;
+        if ((age == null || !Number.isFinite(age)) && birth_date) age = ageFromBirthDate(birth_date);
         return {
           code: mapping.code ? String(r[mapping.code] ?? "").trim() || `AUTO-${Date.now()}-${idx}` : `AUTO-${Date.now()}-${idx}`,
           name: mapping.name ? String(r[mapping.name] ?? "").trim() : "",
-          age: Number.isFinite(age) ? age : null,
+          age: Number.isFinite(age as number) ? age : null,
+          birth_date,
           phones,
           address: mapping.address ? String(r[mapping.address] ?? "").trim() || null : null,
           school: mapping.school ? String(r[mapping.school] ?? "").trim() || null : null,
@@ -156,6 +166,13 @@ function ImportPage() {
         inserted += chunk.length;
       }
       toast.success(`${t("imported_success")} (${inserted})`);
+      if (skippedPhones > 0) {
+        toast.warning(
+          lang === "ar"
+            ? `تم تخطي ${skippedPhones} أرقام غير صحيحة`
+            : `Skipped ${skippedPhones} invalid phone numbers`
+        );
+      }
       navigate({ to: "/students" });
     } catch (err) {
       toast.error((err as Error).message);
