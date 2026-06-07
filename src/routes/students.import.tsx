@@ -186,7 +186,6 @@ function ImportPage() {
     return <div className="text-center py-12 text-muted-foreground">{t("no_permission")}</div>;
   }
 
-
   const startImport = async () => {
     if (!mapping.name && !mapping.code) {
       toast.error(lang === "ar" ? "يجب تحديد الاسم أو الكود على الأقل" : "Map Name or Code at minimum");
