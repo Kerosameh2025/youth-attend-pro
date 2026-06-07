@@ -186,26 +186,6 @@ function ImportPage() {
     return <div className="text-center py-12 text-muted-foreground">{t("no_permission")}</div>;
   }
 
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    try {
-      const { headers, rows } = await parseSpreadsheet(f);
-      setHeaders(headers);
-      setRows(rows);
-      setFileName(f.name);
-      // Smart mapping
-      const map = {} as Record<FieldKey, string>;
-      (Object.keys(FIELD_ALIASES) as FieldKey[]).forEach((k) => {
-        const match = smartMatch(headers, [k, ...FIELD_ALIASES[k].aliases]);
-        if (match) map[k] = match;
-      });
-      setMapping(map);
-      toast.success(`${rows.length} ${t("rows_detected")}`);
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
 
   const startImport = async () => {
     if (!mapping.name && !mapping.code) {
