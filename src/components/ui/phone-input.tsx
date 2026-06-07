@@ -115,7 +115,10 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const showSuccess = touched && valid;
 
     const handleChange = (raw: string) => {
-      const digits = raw.replace(/\D/g, "").slice(0, LOCAL_LENGTH);
+      let digits = raw.replace(/\D/g, "");
+      // Smart strip: if user types 11 digits starting with 0, drop the leading 0
+      if (digits.startsWith("0")) digits = digits.slice(1);
+      digits = digits.slice(0, LOCAL_LENGTH);
       setLocal(digits);
       onChange?.(localToE164(digits), {
         valid: isValidEgyptianLocal(digits),
@@ -208,8 +211,8 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         {/* Helper text */}
         <div id={helpId} className="mt-2 min-h-[1.25rem] text-xs">
           {showError ? (
-            <span className="text-destructive">
-              Enter a valid Egyptian mobile number starting with 010, 011, 012, or 015.
+            <span className="text-destructive" dir="rtl">
+              رقم غير صحيح، يجب أن يبدأ بـ 010، 011، 012، أو 015
             </span>
           ) : showSuccess ? (
             <span className="text-emerald-600">Looks good.</span>
