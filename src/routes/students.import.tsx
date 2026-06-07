@@ -18,18 +18,70 @@ export const Route = createFileRoute("/students/import")({
   ),
 });
 
-type FieldKey = "code" | "name" | "age" | "phones" | "address" | "school" | "father_job" | "notes";
+type FieldKey = "code" | "name" | "age" | "birth_date" | "phones" | "address" | "school" | "father_job" | "notes";
 
 const FIELD_ALIASES: Record<FieldKey, { ar: string; en: string; aliases: string[] }> = {
   code:       { ar: "الكود", en: "Code", aliases: ["code", "id", "كود", "رقم", "no", "number", "م"] },
   name:       { ar: "الاسم", en: "Name", aliases: ["name", "fullname", "اسم", "الاسم", "student"] },
   age:        { ar: "العمر", en: "Age", aliases: ["age", "عمر", "السن", "سن"] },
+  birth_date: { ar: "تاريخ الميلاد", en: "Birth Date", aliases: ["birth_date", "birthdate", "dob", "date_of_birth", "تاريخ الميلاد", "تاريخ ميلاد", "الميلاد", "تاريخالميلاد", "تاريخميلاد"] },
   phones:     { ar: "أرقام التليفون", en: "Phones", aliases: ["phone", "phones", "mobile", "tel", "telephone", "تليفون", "هاتف", "موبايل", "رقم"] },
   address:    { ar: "العنوان", en: "Address", aliases: ["address", "عنوان", "العنوان"] },
   school:     { ar: "المدرسة", en: "School", aliases: ["school", "مدرسة", "المدرسة"] },
   father_job: { ar: "وظيفة الأب", en: "Father's Job", aliases: ["father", "fatherjob", "job", "وظيفة", "الأب", "وظيفةالأب"] },
   notes:      { ar: "ملاحظات", en: "Notes", aliases: ["notes", "note", "comment", "ملاحظات", "ملاحظة"] },
 };
+
+/** Normalize a single Egyptian phone number to E.164 (+20XXXXXXXXXX). Returns null if invalid. */
+function normalizeEgPhone(raw: string): string | null {
+  let digits = String(raw).replace(/\D/g, "");
+  if (!digits) return null;
+  // strip country code if present
+  if (digits.startsWith("0020")) digits = digits.slice(4);
+  else if (digits.startsWith("20") && digits.length >= 12) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  if (digits.length !== 10) return null;
+  if (!/^(10|11|12|15)/.test(digits)) return null;
+  return `+20${digits}`;
+}
+
+/** Parse a date in DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY (also . separator, Excel serial). Returns YYYY-MM-DD or null. */
+function parseBirthDate(raw: unknown): string | null {
+  if (raw == null || raw === "") return null;
+  // Excel numeric serial date
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    const ms = Math.round((raw - 25569) * 86400 * 1000);
+    const d = new Date(ms);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  const s = String(raw).trim();
+  if (!s) return null;
+  // YYYY-MM-DD or YYYY/MM/DD
+  let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if (m) {
+    const [, y, mo, d] = m;
+    return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+  m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (m) {
+    const [, d, mo, y] = m;
+    const day = parseInt(d, 10), month = parseInt(mo, 10);
+    if (day < 1 || day > 31 || month < 1 || month > 12) return null;
+    return `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+  return null;
+}
+
+function ageFromBirthDate(iso: string): number | null {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+  return age >= 0 && age < 150 ? age : null;
+}
 
 function ImportPage() {
   const { t, lang } = useI18n();
