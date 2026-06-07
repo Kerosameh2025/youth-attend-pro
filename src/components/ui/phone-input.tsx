@@ -211,8 +211,8 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         {/* Helper text */}
         <div id={helpId} className="mt-2 min-h-[1.25rem] text-xs">
           {showError ? (
-            <span className="text-destructive">
-              Enter a valid Egyptian mobile number starting with 010, 011, 012, or 015.
+            <span className="text-destructive" dir="rtl">
+              رقم غير صحيح، يجب أن يبدأ بـ 010، 011، 012، أو 015
             </span>
           ) : showSuccess ? (
             <span className="text-emerald-600">Looks good.</span>
