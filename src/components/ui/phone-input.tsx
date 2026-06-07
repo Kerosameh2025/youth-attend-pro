@@ -115,7 +115,10 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const showSuccess = touched && valid;
 
     const handleChange = (raw: string) => {
-      const digits = raw.replace(/\D/g, "").slice(0, LOCAL_LENGTH);
+      let digits = raw.replace(/\D/g, "");
+      // Smart strip: if user types 11 digits starting with 0, drop the leading 0
+      if (digits.startsWith("0")) digits = digits.slice(1);
+      digits = digits.slice(0, LOCAL_LENGTH);
       setLocal(digits);
       onChange?.(localToE164(digits), {
         valid: isValidEgyptianLocal(digits),
