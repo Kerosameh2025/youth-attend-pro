@@ -99,6 +99,88 @@ function ImportPage() {
   const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const ALLOWED_TYPES = [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
+    "text/csv",
+  ];
+  const ALLOWED_EXTS = [".xlsx", ".xls", ".csv"];
+
+  const isAllowedFile = (file: File) =>
+    ALLOWED_TYPES.includes(file.type) ||
+    ALLOWED_EXTS.some((ext) => file.name.toLowerCase().endsWith(ext));
+
+  const processFile = useCallback(
+    async (file: File) => {
+      if (!isAllowedFile(file)) {
+        toast.error(
+          lang === "ar"
+            ? "نوع الملف غير مدعوم. يرجى رفع ملف Excel أو CSV"
+            : "Unsupported file type. Please upload an Excel or CSV file"
+        );
+        setDragActive(false);
+        return;
+      }
+      try {
+        const { headers, rows } = await parseSpreadsheet(file);
+        setHeaders(headers);
+        setRows(rows);
+        setFileName(file.name);
+        setDroppedFileName(file.name);
+        const map = {} as Record<FieldKey, string>;
+        (Object.keys(FIELD_ALIASES) as FieldKey[]).forEach((k) => {
+          const match = smartMatch(headers, [k, ...FIELD_ALIASES[k].aliases]);
+          if (match) map[k] = match;
+        });
+        setMapping(map);
+        toast.success(`${rows.length} ${t("rows_detected")}`);
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
+    },
+    [lang, t]
+  );
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) setDragActive(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    dragCounter.current = 0;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      processFile(file);
+      e.dataTransfer.clearData();
+    }
+  };
+
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    await processFile(f);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   if (!canAdd) {
     return <div className="text-center py-12 text-muted-foreground">{t("no_permission")}</div>;
   }
