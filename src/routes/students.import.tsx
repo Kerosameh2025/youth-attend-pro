@@ -281,17 +281,60 @@ function ImportPage() {
         </div>
       </div>
 
-      {/* Upload */}
+      {/* Upload / Drop zone */}
       {!rows.length && (
-        <label className="block rounded-2xl border-2 border-dashed border-border/60 bg-card p-10 text-center cursor-pointer hover:bg-accent/30 transition-colors">
-          <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={onFile} />
-          <FileSpreadsheet className="size-12 mx-auto text-gold" />
-          <div className="mt-3 font-semibold">{t("upload_file")}</div>
-          <div className="text-xs text-muted-foreground mt-1">.xlsx · .xls · .csv</div>
-          <Button type="button" className="mt-4 pointer-events-none">
-            <Upload className="size-4" /> {t("upload")}
-          </Button>
-        </label>
+        <div
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={cn(
+            "relative block rounded-2xl border-2 border-dashed p-10 text-center cursor-pointer transition-all duration-300 ease-out select-none",
+            dragActive
+              ? "border-gold bg-accent/40 shadow-gold scale-[1.01]"
+              : droppedFileName
+                ? "border-emerald-400/60 bg-emerald-500/5"
+                : "border-border/60 bg-card hover:bg-accent/30 hover:border-gold/50"
+          )}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={handleInputChange}
+          />
+          <div className="transition-transform duration-300 ease-out">
+            {droppedFileName ? (
+              <FileCheck className="size-12 mx-auto text-emerald-500" />
+            ) : dragActive ? (
+              <Upload className="size-12 mx-auto text-gold animate-bounce" />
+            ) : (
+              <FileSpreadsheet className="size-12 mx-auto text-gold" />
+            )}
+          </div>
+          <div className="mt-3 font-semibold transition-colors duration-200">
+            {dragActive
+              ? lang === "ar"
+                ? "أفلت الملف هنا"
+                : "Drop the file here"
+              : droppedFileName
+                ? droppedFileName
+                : lang === "ar"
+                  ? "اسحب الملف هنا أو اضغط للاختيار"
+                  : "Drag file here or click to choose"}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {!droppedFileName && ".xlsx · .xls · .csv"}
+          </div>
+          {!droppedFileName && (
+            <Button type="button" className="mt-4 pointer-events-none" variant="outline">
+              <Upload className="size-4" />
+              {lang === "ar" ? "اختيار ملف" : "Choose file"}
+            </Button>
+          )}
+        </div>
       )}
 
       {/* Mapping + preview */}
