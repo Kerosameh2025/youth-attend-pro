@@ -3,5 +3,9 @@
   "name": "youth-attend-pro",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
-  "pages_build_output_dir": "./dist/client"
+  "pages_build_output_dir": "./dist/client",
+  "vars": {
+    "VITE_SUPABASE_URL": "https://tnixjvoohwfsahcmhgcs.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRuaXhqdm9vaHdmc2FoY21oZ2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzY0NzgsImV4cCI6MjA5NTA1MjQ3OH0.y1w8Zv5Qlf0gvougoc7gZpFubK4q3iBFzk6yyW9wglQ"
+  }
 }
